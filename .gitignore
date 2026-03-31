@@ -1,0 +1,42 @@
+# OS / Editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+.env
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Logs / runtime artifacts
+*.log
+
+# Local caches
+smiles_cache.json
+
+# Large source documents (keep local, do not commit)
+49th-amendment/
+50th-amendment/
+IFRA 51st Amendment - Standards/
+ifra-standards-51st-amendment.pdf
+ifra-51st-amendment-index-of-ifra-standards.pdf
+Generative_Diffusion_Network_for_Creating_Scents (1).pdf
+
+# Generated datasets (regenerate via scripts)
+AI_Predictive_Watchlist.csv
+ifra_category4_extract.csv
+ifra_category4_smiles.csv
+ifra_category4_features.csv
+ifra_smiles_failed.csv
+tgsc_unregulated_fragrances.csv
+
+# Generated proposal artifact
+GSoC_2026_DeepChem_Proposal_Draft.pdf

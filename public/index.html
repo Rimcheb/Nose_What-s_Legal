@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fragrance AI Intelligence | 🔬 Compliance Hub</title>
+  
+  <!-- Tailwind CSS via CDN (Utility-First CSS) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 3Dmol.js via CSB Pitt -->
+  <script src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
+
+  <style>
+    /* Sleek gradient background & modern fonts */
+    body { background-color: #fafafa; font-family: 'Inter', sans-serif; }
+    .glass {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+    }
+    nav button.active {
+      border-bottom: 2px solid #2563eb;
+      color: #2563eb;
+      font-weight: 600;
+    }
+    #mol-container {
+      width: 100%; height: 400px; border-radius: 0.5rem; background: #1a202c; 
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased overflow-x-hidden">
+
+  <!-- Apple-esque Navigation -->
+  <header class="glass sticky top-0 z-50 w-full px-6 py-4 flex justify-between items-center bg-white/80">
+    <div class="flex items-center space-x-2">
+      <span class="text-blue-600 text-2xl font-black tracking-tight">🧪 FragranceOS</span>
+      <span class="text-sm font-medium text-slate-500 pl-2">Trying to cut cost, while smelling great!</span>
+    </div>
+    <div class="relative w-64">
+      <input type="text" autocomplete="off" id="global-search" class="w-full bg-slate-100/50 text-sm border-0 rounded-full py-2 px-4 shadow-inner outline-none focus:ring-2 focus:ring-blue-500" placeholder="Search molecule...">
+      <ul id="search-dropdown" class="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-xl mt-2 hidden max-h-60 overflow-y-auto divide-y divide-slate-100"></ul>
+    </div>
+  </header>
+
+  <!-- Perspective Tabs -->
+  <nav class="w-full max-w-5xl mx-auto flex space-x-8 mt-12 mb-8 border-b border-slate-200 px-4 overflow-x-auto">
+    <button onclick="switchTab('directory')" id="btn-directory" class="tab-btn active pb-4 text-slate-500 hover:text-slate-800 transition whitespace-nowrap whitespace-nowrap">📚 Directory</button>
+    <button onclick="switchTab('consumer')" id="btn-consumer" class="tab-btn pb-4 text-slate-500 hover:text-slate-800 transition whitespace-nowrap">🌱 Mainstream Explorer</button>
+    <button onclick="switchTab('scientist')" id="btn-scientist" class="tab-btn pb-4 text-slate-500 hover:text-slate-800 transition whitespace-nowrap">🔬 Chemist Dashboard</button>
+    <button onclick="switchTab('legal')" id="btn-legal" class="tab-btn pb-4 text-slate-500 hover:text-slate-800 transition whitespace-nowrap">⚖️ Regulatory Audit</button>
+  </nav>
+
+  <!-- Main Content Wrap -->
+  <main class="max-w-5xl mx-auto px-4 mb-24 min-h-[60vh]">
+
+    <!-- ERROR BANNER -->
+    <div id="error-banner" class="hidden text-center text-red-600 font-medium py-4"></div>
+
+    <!-- TAB 0: DIRECTORY (All molecules) -->
+    <section id="tab-directory" class="tab-content animate-fade-in block">
+      <div class="mb-8">
+        <h1 class="text-3xl font-extrabold text-slate-900">Molecule Intelligence Directory</h1>
+        <p class="mt-2 text-slate-500">Browse the database of restricted, banned, and unregulated fragrance ingredients.</p>
+      </div>
+
+      <div id="directory-stats" class="mb-6 flex gap-4 text-sm font-medium text-slate-700">
+        <!-- Stats injected by JS -->
+      </div>
+
+      <!-- Filters & Sorting -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div class="flex space-x-4">
+          <button onclick="filterDirectory('All')" class="px-4 py-1.5 text-sm font-semibold rounded-full bg-slate-800 text-white shadow">All</button>
+          <button onclick="filterDirectory('Banned')" class="px-4 py-1.5 text-sm font-semibold rounded-full bg-red-100 text-red-700 hover:bg-red-200 transition">Banned</button>
+          <button onclick="filterDirectory('Restricted')" class="px-4 py-1.5 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-700 hover:bg-yellow-200 transition">Restricted</button>
+          <button onclick="filterDirectory('Safe')" class="px-4 py-1.5 text-sm font-semibold rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition">Safe</button>
+        </div>
+        <div class="flex items-center space-x-2">
+          <span class="text-sm font-medium text-slate-600">Sort:</span>
+          <select id="sort-select" onchange="sortDirectory(this.value)" class="text-sm border border-slate-300 rounded-md px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-blue-500">
+            <option value="name_asc">Name (A-Z)</option>
+            <option value="year_desc">Year Assessed (Newest First)</option>
+            <option value="year_asc">Year Assessed (Oldest First)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="directory-grid">
+        <!-- Directory items injected by JS -->
+      </div>
+    </section>
+
+    <!-- TAB 1: CONSUMER (Simplicity & Safety Focus) -->
+    <section id="tab-consumer" class="tab-content hidden animate-fade-in">
+      <div class="text-center mb-12">
+        <h1 class="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl border-blue-500 relative inline-block">
+          What is in your perfume?
+          <div class="h-1 w-full bg-blue-500 absolute -bottom-2 opacity-50 absolute-bottom-0 z-[-1]"></div>
+        </h1>
+        <p class="mt-4 text-lg text-slate-500">Plain English safety reports on commercial fragrance ingredients.</p>
+      </div>
+
+      <div class="glass p-8 rounded-2xl flex flex-col md:flex-row gap-8 items-center justify-between shadow-xl">
+        <div class="w-full md:w-1/2">
+          <h2 id="mc-name" class="text-3xl font-bold mb-2 text-slate-800">Lilial</h2>
+          <p id="mc-desc" class="text-slate-600 mb-6">A heavily restricted synthetic aldehyde used for lily of the valley notes.</p>
+          <div id="mc-badge-box">
+            <!-- Badges render here -->
+          </div>
+        </div>
+        <div class="w-full md:w-1/2 bg-slate-50 p-6 rounded-xl border border-slate-100 text-center">
+            <h3 class="text-xs uppercase tracking-widest font-semibold text-slate-400 mb-2">Primary Risk Factor</h3>
+            <p id="mc-risk" class="text-lg font-medium text-pink-600">Reproductive Toxicity</p>
+            <hr class="w-12 mx-auto my-4 border-slate-200">
+            <h3 class="text-xs uppercase tracking-widest font-semibold text-slate-400 mb-2">Skin Limit</h3>
+            <p id="mc-limit" class="text-3xl font-black text-slate-800">0.0%</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: SCIENTIST (Molecular & AI Focus) -->
+    <section id="tab-scientist" class="tab-content hidden animate-fade-in">
+       <div class="mb-8">
+        <h1 class="text-3xl font-extrabold text-slate-900 border-l-4 border-indigo-500 pl-4">Cheminformatics Dashboard</h1>
+        <p class="mt-2 text-slate-500 text-sm">Target molecule rendering and drop-in topological alternatives computed via Jaccard distance over MorganFP bits.</p>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- 3D Viewer Box -->
+        <div class="glass p-4 rounded-2xl shadow-lg relative">
+          <div class="absolute top-6 left-6 z-10 bg-white/90 px-3 py-1 rounded-full shadow text-xs font-semibold" id="ms-name-tag">Molecule Loading...</div>
+          <!-- 3DMol Container -->
+          <div id="mol-container"></div>
+        </div>
+
+        <!-- Analytical Data Box -->
+        <div class="space-y-6">
+          <div class="bg-white p-6 rounded-2xl shadow border border-slate-100">
+            <h3 class="text-xs font-bold uppercase text-slate-400 mb-4 tracking-wider">QSAR Descriptors</h3>
+            <div class="grid grid-cols-2 gap-4 text-sm">
+              <div class="p-3 bg-slate-50 rounded-lg"><span class="block text-slate-500 mb-1">MW (g/mol)</span><span id="ms-mw" class="font-bold text-lg">N/A</span></div>
+              <div class="p-3 bg-slate-50 rounded-lg"><span class="block text-slate-500 mb-1">LogP (Lipophilicity)</span><span id="ms-logp" class="font-bold text-lg">N/A</span></div>
+              <div class="p-3 bg-slate-50 rounded-lg col-span-2"><span class="block text-slate-500 mb-1">SMILES string</span><code id="ms-smiles" class="text-xs font-mono bg-slate-200 px-2 py-1 rounded">N/A</code></div>
+            </div>
+          </div>
+
+          <div class="bg-indigo-50 border border-indigo-100 p-6 rounded-2xl shadow-sm relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-4 opacity-10">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-24 h-24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/></svg>
+            </div>
+            <h3 class="flex items-center text-indigo-800 font-bold mb-2">
+              <span class="mr-2">⚡</span> AI Substitutor
+            </h3>
+            <p class="text-sm text-indigo-600 mb-4 opacity-80">Top unregulated proxy generated from Safe Database (k=1).</p>
+            <div class="bg-white p-4 rounded-xl border border-indigo-100">
+              <p class="text-lg font-bold text-slate-800" id="ms-proxy">Satinaldehyde (63.3% Match)</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: LEGAL (Batch Auditing & Risk) -->
+    <section id="tab-legal" class="tab-content hidden animate-fade-in">
+        <div class="mb-4 flex flex-row items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-extrabold text-slate-900 border-l-4 border-emerald-500 pl-4">Regulatory Audit Trail</h1>
+                <p class="mt-2 text-slate-500 text-sm">Cross-referencing formulas strictly against the IFRA Standards.</p>
+            </div>
+            <label class="bg-black text-white px-6 py-2 rounded-full font-medium shadow-lg hover:bg-slate-800 transition text-sm flex items-center gap-2 cursor-pointer">
+                 <input type="file" id="formula-upload" class="hidden" accept=".csv">
+                 Upload CSV Formula
+                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cloud-arrow-up-fill" viewBox="0 0 16 16"><path d="M8 2a5.53 5.53 0 0 0-3.594 1.342c-.766.66-1.321 1.52-1.464 2.383C1.266 6.095 0 7.555 0 9.318 0 11.366 1.708 13 3.781 13h8.906C14.502 13 16 11.57 16 9.773c0-1.636-1.242-2.969-2.834-3.194C12.923 3.999 10.69 2 8 2zm2.354 5.146a.5.5 0 0 1-.708.708L8.5 6.707V10.5a.5.5 0 0 1-1 0V6.707L6.354 7.854a.5.5 0 1 1-.708-.708l2-2a.5.5 0 0 1 .708 0l2 2z"/></svg>
+            </label>
+        </div>
+
+        <div class="glass p-6 rounded-2xl shadow mt-8">
+            <h3 class="font-bold text-slate-800 flex items-center gap-2 pb-4 mb-4 border-b">
+                <span class="w-3 h-3 rounded-full bg-red-500"></span> 
+                Formula Pass/Fail Ledger
+            </h3>
+            
+            <pre id="audit-ledger" class="font-mono text-sm bg-slate-900 text-green-400 p-6 rounded-xl overflow-x-auto shadow-inner whitespace-pre-wrap">Awaiting CSV formulation payload...</pre>
+        </div>
+    </section>
+
+  </main>
+
+  <!-- Logic Layer -->
+  <script>
+    // Tab switching Script
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      
+      document.getElementById('tab-' + tabId).classList.remove('hidden');
+      document.getElementById('btn-' + tabId).classList.add('active');
+
+      // Re-render 3D container when switched back to so the canvas isn't zero-sized.
+      if (tabId === 'scientist' && window.viewer) {
+          setTimeout(() => viewer.render(), 100);
+      }
+    }
+
+    // 3DMol.js initialization
+    let viewer = null;
+    let currentMolBlock = "";
+
+    function render3DMolecule(molBlock) {
+      if(!molBlock) {
+          document.getElementById('mol-container').innerHTML = "<div class='text-white p-4 h-full flex items-center justify-center font-mono text-sm opacity-50'>No 3D Coordinates Available</div>";
+          return;
+      }
+      
+      let element = document.getElementById('mol-container');
+      element.innerHTML = ""; // clear previous
+      let config = { backgroundColor: '#1e293b' };
+      viewer = $3Dmol.createViewer( element, config );
+      viewer.addModel( molBlock, "sdf" );
+      viewer.setStyle({}, { stick:{radius:0.15, colorscheme: "Jmol"}, sphere:{scale:0.3} });
+      viewer.zoomTo();
+      viewer.render();
+      viewer.spin("y", 1); // Auto spin slowly
+    }
+
+    // API Call & Data Binding
+    async function fetchMoleculeData(query) {
+      try {
+        const errorBanner = document.getElementById("error-banner");
+        errorBanner.classList.add("hidden");
+
+        const response = await fetch(`http://127.0.0.1:8000/api/molecule/${query}`);
+        if (!response.ok) {
+            errorBanner.textContent = `Could not find "${query}" in the database. Try: Lilial, Limonene, or Eugenol.`;
+            errorBanner.classList.remove("hidden");
+            return;
+        }
+        
+        const data = await response.json();
+        
+        // --- Populate Consumer UI ---
+        document.getElementById('mc-name').textContent = data.name;
+        document.getElementById('mc-desc').textContent = data.desc;
+        document.getElementById('mc-risk').textContent = data.risk;
+        document.getElementById('mc-limit').textContent = data.limit === "0.0" ? "0.0% (BANNED)" : data.limit + "%";
+        
+        const badgeBox = document.getElementById('mc-badge-box');
+        if (data.status === "Banned") {
+            badgeBox.innerHTML = '<span class="inline-flex items-center rounded-md bg-red-50 px-3 py-1 text-xs font-bold text-red-700 ring-1 ring-inset ring-red-600/10">BANNED BY IFRA</span>';
+        } else if (data.status === "Restricted") {
+            badgeBox.innerHTML = '<span class="inline-flex items-center rounded-md bg-yellow-50 px-3 py-1 text-xs font-bold text-yellow-800 ring-1 ring-inset ring-yellow-600/20">RESTRICTED</span>';
+        } else {
+            badgeBox.innerHTML = '<span class="inline-flex items-center rounded-md bg-green-50 px-3 py-1 text-xs font-bold text-green-700 ring-1 ring-inset ring-green-600/20">SAFE</span>';
+        }
+
+        // --- Populate Scientist UI ---
+        document.getElementById('ms-name-tag').textContent = data.name + " (" + data.status + ")";
+        document.getElementById('ms-mw').textContent = data.mol_wt;
+        document.getElementById('ms-logp').textContent = data.logp;
+        document.getElementById('ms-smiles').textContent = data.smiles;
+        document.getElementById('ms-proxy').innerHTML = data.replacement;
+        
+        // Render geometry
+        currentMolBlock = data.mol_block;
+        render3DMolecule(currentMolBlock);
+
+      } catch (err) {
+          console.error(err);
+      }
+    }
+
+    // Make directory the default active tab instead of loading Lilial immediately
+    let allMolecules = [];
+    let currentFilter = 'All';
+    let currentSort = 'name_asc';
+
+    async function loadDirectory() {
+      try {
+        const response = await fetch(`/api/directory`);
+        allMolecules = await response.json();
+        
+        // Compute overall stats
+        const total = allMolecules.length;
+        const banned = allMolecules.filter(m => m.status.includes('Banned')).length;
+        const restricted = allMolecules.filter(m => m.status.includes('Restricted')).length;
+        const safe = allMolecules.filter(m => m.status.includes('Safe')).length;
+        
+        const statsHtml = `
+          <div class="bg-blue-50 text-blue-800 px-3 py-1 rounded-md">Total Directory: <span class="font-bold">${total}</span></div>
+          <div class="bg-red-50 text-red-800 px-3 py-1 rounded-md">Banned: <span class="font-bold">${banned}</span></div>
+          <div class="bg-yellow-50 text-yellow-800 px-3 py-1 rounded-md">Restricted: <span class="font-bold">${restricted}</span></div>
+          <div class="bg-green-50 text-green-800 px-3 py-1 rounded-md">Watchlist (Safe): <span class="font-bold">${safe}</span></div>
+        `;
+        document.getElementById("directory-stats").innerHTML = statsHtml;
+
+        // Perform initial render with default filter and sort
+        applyFilterAndSort();
+      } catch (err) {
+        console.error("Failed to load directory", err);
+      }
+    }
+
+    function renderDirectory(mols) {
+      const grid = document.getElementById("directory-grid");
+      grid.innerHTML = mols.map(m => {
+        let badgeColor = "bg-green-100 text-green-700";
+        if (m.status.includes("Banned")) badgeColor = "bg-red-100 text-red-700";
+        else if (m.status.includes("Restricted")) badgeColor = "bg-yellow-100 text-yellow-700";
+
+        let yearHtml = "";
+        if (m.year && m.year !== "N/A" && m.year !== "Unknown Year") {
+            yearHtml = `<div class="mt-2 text-xs font-semibold text-slate-500">Year Regulated: <span class="text-slate-700">${m.year}</span></div>`;
+        }
+
+        return `
+          <div onclick="openMolecule('${m.name}')" class="glass p-5 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md hover:border-blue-300 transition cursor-pointer flex flex-col justify-between h-full bg-white">
+            <div>
+              <h3 class="font-bold text-lg text-slate-800">${m.name}</h3>
+              <p class="text-xs text-slate-500 mt-1">${m.risk}</p>
+              ${yearHtml}
+            </div>
+            <div class="mt-4">
+              <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${badgeColor}">${m.status}</span>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function filterDirectory(status) {
+      currentFilter = status;
+      applyFilterAndSort();
+    }
+
+    function sortDirectory(sortType) {
+      currentSort = sortType;
+      applyFilterAndSort();
+    }
+
+    function applyFilterAndSort() {
+      // 1. Filter
+      let filtered = currentFilter === 'All' 
+        ? [...allMolecules] 
+        : allMolecules.filter(m => m.status.includes(currentFilter));
+
+      // 2. Sort
+      filtered.sort((a, b) => {
+        if (currentSort === 'name_asc') {
+          return a.name.localeCompare(b.name);
+        } else {
+          // 'year_asc' or 'year_desc'
+          // Parse year ("Unknown Year" or "N/A" goes to the end typically)
+          const ya = parseInt(a.year) || (currentSort === 'year_asc' ? 9999 : 0);
+          const yb = parseInt(b.year) || (currentSort === 'year_asc' ? 9999 : 0);
+          
+          if (currentSort === 'year_desc') {
+            return yb - ya;
+          } else {
+            return ya - yb;
+          }
+        }
+      });
+
+      renderDirectory(filtered);
+    }
+
+    function openMolecule(name) {
+      switchTab('consumer');
+      fetchMoleculeData(name);
+    }
+
+    // Initialize
+    window.addEventListener('load', () => {
+      loadDirectory();
+    });
+
+    // Hook search bar & autocomplete
+    const searchInput = document.getElementById("global-search");
+    const searchDropdown = document.getElementById("search-dropdown");
+
+    searchInput.addEventListener("input", async (e) => {
+      const val = e.target.value.trim();
+      if (val.length === 0) {
+        searchDropdown.classList.add("hidden");
+        return;
+      }
+      try {
+        // Query our new autocomplete backend endpoint
+        const res = await fetch(`http://127.0.0.1:8000/api/search?q=${val}`);
+        const matches = await res.json();
+        
+        if (matches.length > 0) {
+          searchDropdown.innerHTML = matches.map(m => 
+            `<li class="px-4 py-3 hover:bg-blue-50 cursor-pointer text-sm text-slate-800 font-medium transition search-item" data-name="${m.name}">${m.name}</li>`
+          ).join("");
+          searchDropdown.classList.remove("hidden");
+        } else {
+          searchDropdown.innerHTML = `<li class="px-4 py-3 text-sm text-slate-400 italic">No matches found</li>`;
+          searchDropdown.classList.remove("hidden");
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
+    // Hide dropdown when clicking anywhere else
+    document.addEventListener('click', (e) => {
+      if (!searchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
+        searchDropdown.classList.add('hidden');
+      }
+    });
+
+    // Handle clicking on an autocomplete suggestion
+    searchDropdown.addEventListener('click', (e) => {
+      const item = e.target.closest('.search-item');
+      if (item) {
+        const selectedName = item.getAttribute('data-name');
+        searchInput.value = selectedName;
+        searchDropdown.classList.add('hidden');
+        openMolecule(selectedName); // Instantly pull up the data and switch tab!
+      }
+    });
+
+    // Still allow 'Enter' to submit directly
+    searchInput.addEventListener("keypress", function (e) {
+      if (e.key === "Enter") {
+        openMolecule(e.target.value.trim());
+        searchDropdown.classList.add("hidden");
+      }
+    });
+
+  </script>
+</body>
+</html>

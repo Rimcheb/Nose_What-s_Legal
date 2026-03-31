@@ -1,0 +1,135 @@
+# Fragrance AI Compliance System
+
+## Overview
+This project builds an end-to-end cheminformatics workflow for fragrance regulatory analysis, focused on IFRA Category 4 (Fine Fragrance) use-cases.
+
+The system connects:
+- document-derived regulatory data,
+- chemical structure normalization,
+- molecular feature engineering,
+- predictive risk modeling,
+- and application-layer compliance tools.
+
+It is designed to answer practical formulation questions:
+- Is this ingredient banned, restricted, or currently unregulated?
+- Which unregulated molecules are structurally high-risk?
+- What safer structural alternatives are available?
+- Is a formula compliant with IFRA Category 4 concentration limits?
+
+## What This Project Implements
+
+### 1) Regulatory Data Pipeline
+The pipeline extracts and normalizes IFRA ingredient-level records, then organizes the data into machine-usable tables.
+
+Key outputs:
+- ingredient identity fields (`ingredient_name`, `synonyms`, `cas_number`)
+- regulatory context (`category_4_limit_percent`, `reason`, `rule_year`)
+
+### 2) Chemical Identifier Resolution
+The project resolves structures from identifier text using CAS and name-based lookups:
+- CAS-first strategy
+- name fallback strategy
+- local cache to avoid repeated lookups (`smiles_cache.json`)
+
+Primary output:
+- `ifra_category4_smiles.csv`
+
+### 3) Molecular Featurization
+Resolved SMILES are transformed into ML-ready vectors:
+- RDKit descriptors (`MolWt`, `LogP`, `TPSA`)
+- Morgan fingerprints (ECFP-like 2048-bit representation)
+
+Primary output:
+- `ifra_category4_features.csv`
+
+### 4) Modeling and Risk Analytics
+The project includes:
+- similarity search with Jaccard/Tanimoto over bit vectors,
+- classification over molecular fingerprints for risk-reason patterns,
+- watchlist generation for unregulated molecules with high structural proximity to restricted compounds.
+
+### 5) Application Layer
+Two interfaces are provided:
+- `main.py`: FastAPI backend with searchable molecule and audit endpoints.
+- `app.py`: Streamlit dashboard for directory browsing, chemist/regulatory views, and compliance demonstration.
+
+## Reported Outcomes
+From the project runs documented in this repository:
+- ~484 restricted ingredient profiles extracted and normalized.
+- ~83.5% structure resolution success (identifier -> SMILES).
+- ~404 molecules featurized for modeling.
+- ~94% Random Forest test accuracy on restriction-reason classification task.
+- 69 high-risk unregulated molecules flagged in watchlist generation.
+
+## Repository Layout
+- `app.py`: Streamlit interface
+- `main.py`: FastAPI service
+- `public/index.html`: static frontend entry
+- `scripts/extract_ifra_category4.py`: IFRA extraction utility
+- `scripts/fetch_smiles.py`: SMILES resolution utility
+- `scripts/featurize_molecules.py`: RDKit feature generation
+- `scripts/featurize_molecules_deepchem.py`: optional DeepChem fingerprint path
+- `scripts/ml_model.py`: model training and candidate assessment
+- `scripts/find_substitutes.py`: replacement search
+- `scripts/formula_auditor.py`: formula compliance checker
+- `scripts/early_warning_scanner.py`: sampled watchlist scanner
+- `scripts/generate_watchlist_full.py`: full-scale watchlist generator
+- `sample_formula.csv`: demo formula for audit testing
+- `ifra_category4_*.csv`, `AI_Predictive_Watchlist.csv`: prepared data artifacts
+
+## Setup
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+## Run the Apps
+
+### FastAPI
+```bash
+uvicorn main:app --reload
+```
+
+### Streamlit
+```bash
+streamlit run app.py
+```
+
+## Run Core Pipeline Scripts
+
+### Featurize existing SMILES data
+```bash
+python3 scripts/featurize_molecules.py \
+  --input ifra_category4_smiles.csv \
+  --output ifra_category4_features.csv
+```
+
+### Train/test model and assess one candidate
+```bash
+python3 scripts/ml_model.py \
+  --db ifra_category4_features.csv \
+  --test_name "Raspberry Ketone" \
+  --test_smiles "O=C(CC1=CC=C(C=C1)O)C"
+```
+
+### Formula audit
+```bash
+python3 scripts/formula_auditor.py --formula sample_formula.csv
+```
+
+## API Endpoints (FastAPI)
+- `GET /api/directory`: full molecule directory payload
+- `GET /api/search?q=<prefix>`: prefix-based molecule search
+- `GET /api/molecule/{name}`: molecule detail payload including optional computed properties
+- `POST /api/audit`: batch compliance audit
+
+## Current Scope and Limitations
+- The workflow is centered on IFRA Category 4 analysis.
+- Structure resolution quality is bounded by external resolver coverage and naming consistency.
+- The deployed interfaces are functional prototypes intended for analysis workflows, not yet hardened production services.
+
+## Next Engineering Priorities
+- Improve structured extraction coverage and validation for additional IFRA classes/categories.
+- Add stronger model validation suites and calibrated uncertainty outputs.
+- Package repeatable training/evaluation commands into a single CLI entrypoint.
