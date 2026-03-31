@@ -1,5 +1,7 @@
 from pathlib import Path
 from typing import Dict, List
+from urllib.parse import quote
+from urllib.request import urlopen
 
 import pandas as pd
 import streamlit as st
@@ -279,6 +281,40 @@ def compute_replacements(target_smiles: str, candidate_df: pd.DataFrame, top_k: 
     return out.head(top_k)
 
 
+def render_structure(smiles: str, label: str) -> None:
+    """Render a 2D structure from SMILES with RDKit or a network fallback."""
+    if not smiles:
+        st.info("No SMILES available for structure rendering.")
+        return
+
+    if RDKIT_AVAILABLE:
+        mol = Chem.MolFromSmiles(smiles)
+        if mol is None:
+            st.warning("SMILES could not be parsed for 2D rendering.")
+            return
+        img = Draw.MolToImage(mol, size=(320, 320))
+        st.image(img, caption=f"2D structure of {label}")
+        return
+
+    encoded = quote(smiles, safe="")
+    fallback_urls = [
+        f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/{encoded}/PNG",
+        f"https://cactus.nci.nih.gov/chemical/structure/{encoded}/image",
+    ]
+
+    for url in fallback_urls:
+        try:
+            with urlopen(url, timeout=8) as response:
+                image_bytes = response.read()
+                if image_bytes:
+                    st.image(image_bytes, caption=f"2D structure of {label}")
+                    return
+        except Exception:
+            continue
+
+    st.warning("2D structure rendering is unavailable in this environment.")
+
+
 df = load_directory_data()
 lookup = build_limit_lookup()
 
@@ -367,13 +403,7 @@ with tab2:
     st.write(f"**SMILES:** `{target_smiles}`")
     st.write(f"**LogP:** {target_row.get('LogP', 0.0)}")
 
-    if RDKIT_AVAILABLE and target_smiles:
-        mol = Chem.MolFromSmiles(target_smiles)
-        if mol is not None:
-            img = Draw.MolToImage(mol, size=(300, 300))
-            st.image(img, caption=f"2D structure of {target_name}")
-    else:
-        st.info("RDKit is not installed in this environment. Structure rendering is disabled.")
+    render_structure(target_smiles, target_name)
 
     st.markdown("#### Structural replacement candidates")
     safe_pool = df[df["Category"] == "Safe"]
