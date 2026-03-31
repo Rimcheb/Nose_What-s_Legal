@@ -63,6 +63,7 @@ From the project runs documented in this repository:
 
 ## Repository Layout
 - `app.py`: Streamlit interface
+- `streamlit_app.py`: Streamlit Community Cloud entrypoint
 - `main.py`: FastAPI service
 - `public/index.html`: static frontend entry
 - `scripts/extract_ifra_category4.py`: IFRA extraction utility
@@ -78,10 +79,21 @@ From the project runs documented in this repository:
 - `ifra_category4_*.csv`, `AI_Predictive_Watchlist.csv`: prepared data artifacts
 
 ## Setup
+
+### Streamlit Hosting Setup (minimal)
+This install path is optimized for Streamlit Community Cloud deployment.
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+```
+
+### Full Local Pipeline Setup
+Use this for API + scripts + data engineering workflows.
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-full.txt
 ```
 
 ## Run the Apps
@@ -93,7 +105,7 @@ uvicorn main:app --reload
 
 ### Streamlit
 ```bash
-streamlit run app.py
+streamlit run streamlit_app.py
 ```
 
 ## Run Core Pipeline Scripts
@@ -128,6 +140,20 @@ python3 scripts/formula_auditor.py --formula sample_formula.csv
 - The workflow is centered on IFRA Category 4 analysis.
 - Structure resolution quality is bounded by external resolver coverage and naming consistency.
 - The deployed interfaces are functional prototypes intended for analysis workflows, not yet hardened production services.
+
+## Public Deployment (Streamlit Community Cloud)
+1. Push this repository to GitHub.
+2. Go to Streamlit Community Cloud and click **Create app**.
+3. Select repository: `Rimcheb/fragrance-ai-compliance-system`.
+4. Set branch: `main`.
+5. Set main file path: `streamlit_app.py`.
+6. Deploy.
+7. In app settings, keep visibility as **Public**.
+
+The app is cloud-ready by default:
+- `requirements.txt` is deployment-focused and lightweight.
+- `.streamlit/config.toml` contains server/theme defaults.
+- The UI gracefully handles environments where RDKit is unavailable.
 
 ## Next Engineering Priorities
 - Improve structured extraction coverage and validation for additional IFRA classes/categories.

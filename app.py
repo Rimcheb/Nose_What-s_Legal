@@ -1,243 +1,431 @@
-import streamlit as st
-import pandas as pd
+from pathlib import Path
+from typing import Dict, List
 
-# Try importing RDKit for molecular drawing
+import pandas as pd
+import streamlit as st
+
+# Optional RDKit support (app still runs without it)
 try:
     from rdkit import Chem
+    from rdkit.Chem import AllChem
     from rdkit.Chem import Draw
+    from rdkit import DataStructs
+
     RDKIT_AVAILABLE = True
 except ImportError:
     RDKIT_AVAILABLE = False
 
-# --- Page Configuration ---
+
+IFRA_SMILES_PATH = Path("ifra_category4_smiles.csv")
+IFRA_FEATURES_PATH = Path("ifra_category4_features.csv")
+WATCHLIST_PATH = Path("AI_Predictive_Watchlist.csv")
+SAMPLE_FORMULA_PATH = Path("sample_formula.csv")
+
+
 st.set_page_config(
     page_title="Fragrance AI Compliance System",
     page_icon="🧪",
-    layout="wide"
+    layout="wide",
 )
 
-# --- Title Header ---
-st.title("🧪 Fragrance AI Intelligence Hub")
-st.markdown("An AI-powered exploration & compliance platform for fragrance molecules.")
-                                                                         
-# --- Real Data Loading ---
-@st.cache_data
-def load_real_data():
-    db = []
-    
-    # Load IFRA Data
+st.title("Fragrance AI Intelligence Hub")
+st.caption("Regulatory analytics, structure-based screening, and formula auditing for IFRA Category 4 workflows.")
+
+
+def _safe_float(value, default=0.0):
     try:
-        ifra_df = pd.read_csv("ifra_category4_smiles.csv")
+        if pd.isna(value):
+            return default
+        return float(value)
+    except Exception:
+        return default
+
+
+@st.cache_data(show_spinner=False)
+def load_ifra_raw() -> pd.DataFrame:
+    if not IFRA_SMILES_PATH.exists():
+        return pd.DataFrame()
+    return pd.read_csv(IFRA_SMILES_PATH)
+
+
+@st.cache_data(show_spinner=False)
+def load_feature_map() -> Dict[str, float]:
+    if not IFRA_FEATURES_PATH.exists():
+        return {}
+    feat_df = pd.read_csv(IFRA_FEATURES_PATH)
+    if "ingredient_name" not in feat_df.columns or "LogP" not in feat_df.columns:
+        return {}
+
+    mapping: Dict[str, float] = {}
+    for _, row in feat_df.iterrows():
+        name = str(row.get("ingredient_name", "")).strip().lower()
+        if not name:
+            continue
+        mapping[name] = _safe_float(row.get("LogP"), default=0.0)
+    return mapping
+
+
+@st.cache_data(show_spinner=False)
+def load_directory_data() -> pd.DataFrame:
+    records: List[dict] = []
+
+    ifra_df = load_ifra_raw()
+    logp_map = load_feature_map()
+
+    if not ifra_df.empty:
         for _, row in ifra_df.iterrows():
-            name = str(row["ingredient_name"])
-            if pd.isna(name) or name.lower() == "nan":
+            name = str(row.get("ingredient_name", "")).strip()
+            if not name or name.lower() == "nan":
                 continue
-                
-            limit = row["category_4_limit_percent"]
-            limit_val = float(limit) if pd.notna(limit) else 0.0
-            
+
+            limit_val = _safe_float(row.get("category_4_limit_percent"), default=0.0)
             status = "Banned" if limit_val == 0.0 else "Restricted"
             reason_val = row.get("reason", "Regulatory Risk")
             if pd.isna(reason_val) or str(reason_val).lower() == "nan":
-                risk = "Safety Risk (Unspecified)"
+                safety_risk = "Safety Risk (Unspecified)"
             else:
-                risk = str(reason_val)
-                
+                safety_risk = str(reason_val)
+
             rule_year = row.get("rule_year")
             year_str = "Unknown" if pd.isna(rule_year) else str(int(rule_year))
-            smiles_val = str(row["smiles"]) if pd.notna(row["smiles"]) else ""
+            smiles_val = str(row.get("smiles", "")).strip()
 
-            db.append({
-                "Name": name,
-                "SMILES": smiles_val,
+            records.append(
+                {
+                    "Name": name,
+                    "SMILES": smiles_val,
+                    "Status": status,
+                    "Safety_Risk": safety_risk,
+                    "Limit_Cat4": limit_val,
+                    "Year": year_str,
+                    "Category": status,
+                    "LogP": logp_map.get(name.lower(), 0.0),
+                }
+            )
+
+    existing_names = {item["Name"].lower() for item in records}
+    if WATCHLIST_PATH.exists():
+        watch_df = pd.read_csv(WATCHLIST_PATH)
+        for _, row in watch_df.iterrows():
+            name = str(row.get("Candidate_Name", "")).strip()
+            if not name or name.lower() == "nan" or name.lower() in existing_names:
+                continue
+
+            records.append(
+                {
+                    "Name": name,
+                    "SMILES": str(row.get("Candidate_SMILES", "")).strip(),
+                    "Status": "Safe / Unregulated (High Risk)",
+                    "Safety_Risk": str(row.get("AI_Predicted_Risk", "Potential Risk")),
+                    "Limit_Cat4": 100.0,
+                    "Year": "N/A",
+                    "Category": "Safe",
+                    "LogP": 0.0,
+                }
+            )
+
+    if not records:
+        return pd.DataFrame(
+            {
+                "Name": ["Eugenol", "Lilial", "Limonene"],
+                "SMILES": [
+                    "COC1=C(O)C=CC(CC=C)=C1",
+                    "CC(C)(C)c1ccc(CC(C)C=O)cc1",
+                    "CC1=CCC(CC1)C(=C)C",
+                ],
+                "Status": ["Restricted", "Banned", "Unregulated"],
+                "Safety_Risk": ["Skin Sensitization", "Reproductive Toxicity", "Low"],
+                "Limit_Cat4": [2.5, 0.0, None],
+                "Year": ["2020", "2019", "Unknown"],
+                "Category": ["Restricted", "Banned", "Safe"],
+                "LogP": [0.0, 0.0, 0.0],
+            }
+        )
+
+    return pd.DataFrame(records)
+
+
+@st.cache_data(show_spinner=False)
+def build_limit_lookup() -> Dict[str, dict]:
+    ifra_df = load_ifra_raw()
+    lookup: Dict[str, dict] = {}
+
+    if ifra_df.empty:
+        return lookup
+
+    for _, row in ifra_df.iterrows():
+        name = str(row.get("ingredient_name", "")).strip()
+        if not name or name.lower() == "nan":
+            continue
+
+        limit = _safe_float(row.get("category_4_limit_percent"), default=0.0)
+        reason = str(row.get("reason", "Regulatory Risk"))
+
+        lookup[name.lower()] = {"canonical": name, "limit": limit, "reason": reason}
+
+        synonyms = row.get("synonyms")
+        if pd.notna(synonyms):
+            parts = [
+                s.strip()
+                for s in str(synonyms).replace(";", "|").replace("\n", "|").split("|")
+                if s.strip()
+            ]
+            for syn in parts:
+                lookup[syn.lower()] = {"canonical": name, "limit": limit, "reason": reason}
+
+    return lookup
+
+
+def parse_formula_file(uploaded_file) -> pd.DataFrame:
+    if uploaded_file is not None:
+        formula_df = pd.read_csv(uploaded_file)
+    elif SAMPLE_FORMULA_PATH.exists():
+        formula_df = pd.read_csv(SAMPLE_FORMULA_PATH)
+    else:
+        return pd.DataFrame()
+
+    cols = {c.lower(): c for c in formula_df.columns}
+    if "ingredient" not in cols or "percentage" not in cols:
+        return pd.DataFrame()
+
+    clean = formula_df[[cols["ingredient"], cols["percentage"]]].copy()
+    clean.columns = ["Ingredient", "Percentage"]
+    clean["Ingredient"] = clean["Ingredient"].astype(str).str.strip()
+    clean["Percentage"] = pd.to_numeric(clean["Percentage"], errors="coerce")
+    clean = clean.dropna(subset=["Ingredient", "Percentage"])
+    return clean
+
+
+def audit_formula(formula_df: pd.DataFrame, lookup: Dict[str, dict]) -> pd.DataFrame:
+    results = []
+    for _, row in formula_df.iterrows():
+        ing = str(row["Ingredient"]).strip()
+        pct = float(row["Percentage"])
+        key = ing.lower()
+        item = lookup.get(key)
+
+        if item is None:
+            results.append(
+                {
+                    "Ingredient": ing,
+                    "In_Formula_%": pct,
+                    "IFRA_Limit_%": "Unregulated",
+                    "Status": "PASS",
+                    "Regulatory_Notes": "No IFRA Category 4 restriction found.",
+                }
+            )
+            continue
+
+        limit = item["limit"]
+        reason = item["reason"]
+        canonical = item["canonical"]
+
+        if limit == 0.0:
+            status = "FAIL"
+        elif pct > limit:
+            status = "FAIL"
+        else:
+            status = "PASS"
+
+        results.append(
+            {
+                "Ingredient": ing,
+                "In_Formula_%": pct,
+                "IFRA_Limit_%": limit,
                 "Status": status,
-                "Safety_Risk": risk,
-                "Limit_Cat4": limit_val,
-                "Year": year_str,
-                "Category": status
-            })
-    except Exception as e:
-        st.warning(f"Could not load IFRA data: {e}")
+                "Regulatory_Notes": f"Matched as: {canonical}. Reason: {reason}",
+            }
+        )
 
-    # Load Watchlist
-    existing_names = {item["Name"].lower(): True for item in db}
-    try:
-        watchlist_df = pd.read_csv("AI_Predictive_Watchlist.csv")
-        for _, row in watchlist_df.iterrows():
-            name = str(row["Candidate_Name"])
-            if pd.isna(name) or name.lower() == "nan":
-                continue
-            if name.lower() in existing_names:
-                continue
-                
-            smiles_val = str(row["Candidate_SMILES"]) if pd.notna(row["Candidate_SMILES"]) else ""
-            db.append({
-                "Name": name,
-                "SMILES": smiles_val,
-                "Status": "Safe / Unregulated (High Risk)",
-                "Safety_Risk": str(row.get("AI_Predicted_Risk", "Potential Risk")),
-                "Limit_Cat4": 100.0,
-                "Year": "N/A",
-                "Category": "Safe"
-            })
-    except Exception as e:
-        st.warning(f"Could not load Watchlist data: {e}")
-        
-    df = pd.DataFrame(db)
-    if len(df) == 0:
-        df = pd.DataFrame({
-            "Name": ["Eugenol", "Lilial", "Limonene"],
-            "SMILES": ["COC1=C(O)C=CC(CC=C)=C1", "CC(C)(C)c1ccc(CC(C)C=O)cc1", "CC1=CCC(CC1)C(=C)C"],
-            "Status": ["Restricted", "Banned", "Unregulated"],
-            "Safety_Risk": ["Skin Sensitization", "Reproductive Toxicity", "Low"],
-            "Limit_Cat4": [2.5, 0.0, None],
-            "Year": ["2020", "2019", "Unknown"],
-            "Category": ["Restricted", "Banned", "Safe"]
-        })
-    if "LogP" not in df.columns:
-        df["LogP"] = 0.0
-    return df
+    return pd.DataFrame(results)
 
-df = load_real_data()
 
-# --- Perspective Tabs ---
-tab0, tab1, tab2, tab3 = st.tabs(["📚 Directory", "🌱 Consumer / Mainstream", "🔬 Chemist / Scientist", "⚖️ Legal / Regulatory"])
+def compute_replacements(target_smiles: str, candidate_df: pd.DataFrame, top_k: int = 5) -> pd.DataFrame:
+    if not RDKIT_AVAILABLE or not target_smiles:
+        return pd.DataFrame()
 
-# ==========================================
-# TAB 0: DIRECTORY
-# ==========================================
+    target_mol = Chem.MolFromSmiles(target_smiles)
+    if target_mol is None:
+        return pd.DataFrame()
+
+    target_fp = AllChem.GetMorganFingerprintAsBitVect(target_mol, 2, nBits=1024)
+
+    rows = []
+    for _, row in candidate_df.iterrows():
+        name = str(row.get("Name", "")).strip()
+        smiles = str(row.get("SMILES", "")).strip()
+        if not name or not smiles:
+            continue
+
+        mol = Chem.MolFromSmiles(smiles)
+        if mol is None:
+            continue
+
+        fp = AllChem.GetMorganFingerprintAsBitVect(mol, 2, nBits=1024)
+        score = DataStructs.TanimotoSimilarity(target_fp, fp)
+        rows.append(
+            {
+                "Candidate": name,
+                "Similarity_%": round(score * 100, 1),
+                "SMILES": smiles,
+                "Status": row.get("Status", "Safe / Unregulated"),
+            }
+        )
+
+    if not rows:
+        return pd.DataFrame()
+
+    out = pd.DataFrame(rows).sort_values("Similarity_%", ascending=False)
+    return out.head(top_k)
+
+
+df = load_directory_data()
+lookup = build_limit_lookup()
+
+if df.empty:
+    st.error("No data available. Add IFRA and watchlist CSV files to run this app.")
+    st.stop()
+
+
+tab0, tab1, tab2, tab3 = st.tabs(
+    ["Directory", "Consumer View", "Scientist View", "Regulatory Audit"]
+)
+
 with tab0:
-    st.header("Molecule Intelligence Directory")
-    st.markdown("Browse the database of restricted, banned, and unregulated fragrance ingredients.")
-    
-    total = len(df)
-    banned_count = len(df[df['Category'] == 'Banned'])
-    restricted_count = len(df[df['Category'] == 'Restricted'])
-    safe_count = len(df[df['Category'] == 'Safe'])
-    
-    st.markdown(f"**Total Directory:** {total} &nbsp;&nbsp;|&nbsp;&nbsp; **Banned:** {banned_count} &nbsp;&nbsp;|&nbsp;&nbsp; **Restricted:** {restricted_count} &nbsp;&nbsp;|&nbsp;&nbsp; **Watchlist (Safe):** {safe_count}")
-    
-    st.markdown("---")
-    
-    col_filter, col_sort = st.columns([2, 2])
-    with col_filter:
-        filter_opt = st.radio("Filter Category:", ["All", "Banned", "Restricted", "Safe"], horizontal=True)
-    with col_sort:
-        sort_opt = st.selectbox("Sort:", ["Alphabetical", "Year Banned (Newest)", "Year Banned (Oldest)"])
-    
+    st.subheader("Molecule Intelligence Directory")
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.metric("Total", len(df))
+    with c2:
+        st.metric("Banned", int((df["Category"] == "Banned").sum()))
+    with c3:
+        st.metric("Restricted", int((df["Category"] == "Restricted").sum()))
+
+    search_text = st.text_input("Search by ingredient name", value="").strip().lower()
+    filter_opt = st.radio("Filter", ["All", "Banned", "Restricted", "Safe"], horizontal=True)
+    sort_opt = st.selectbox(
+        "Sort",
+        ["Alphabetical", "Year Banned (Newest)", "Year Banned (Oldest)"],
+    )
+
     filtered_df = df.copy()
+    if search_text:
+        filtered_df = filtered_df[filtered_df["Name"].str.lower().str.contains(search_text, na=False)]
+
     if filter_opt != "All":
-        filtered_df = filtered_df[filtered_df['Category'] == filter_opt]
-        
+        filtered_df = filtered_df[filtered_df["Category"] == filter_opt]
+
     if sort_opt == "Alphabetical":
         filtered_df = filtered_df.sort_values("Name", ascending=True)
-    elif sort_opt == "Year Banned (Newest)":
-        try:
-            filtered_df['Year_Num'] = pd.to_numeric(filtered_df['Year'], errors='coerce')
-            filtered_df = filtered_df.sort_values("Year_Num", ascending=False)
-            filtered_df = filtered_df.drop(columns=['Year_Num'])
-        except:
-            pass
-    elif sort_opt == "Year Banned (Oldest)":
-        try:
-            filtered_df['Year_Num'] = pd.to_numeric(filtered_df['Year'], errors='coerce')
-            filtered_df = filtered_df.sort_values("Year_Num", ascending=True)
-            filtered_df = filtered_df.drop(columns=['Year_Num'])
-        except:
-            pass
-    
-    st.markdown(f"**Showing {len(filtered_df)} results**")
-    st.dataframe(filtered_df[["Name", "Category", "Year", "Limit_Cat4", "Safety_Risk"]], use_container_width=True, height=500)
+    else:
+        year_num = pd.to_numeric(filtered_df["Year"], errors="coerce")
+        filtered_df = filtered_df.assign(Year_Num=year_num)
+        filtered_df = filtered_df.sort_values(
+            "Year_Num", ascending=(sort_opt == "Year Banned (Oldest)")
+        ).drop(columns=["Year_Num"])
 
-# ==========================================
-# TAB 1: CONSUMER (Mainstream)
-# ==========================================
+    st.write(f"Showing {len(filtered_df)} result(s).")
+    st.dataframe(
+        filtered_df[["Name", "Category", "Year", "Limit_Cat4", "Safety_Risk"]],
+        use_container_width=True,
+        height=500,
+    )
+
+    st.download_button(
+        "Download current view as CSV",
+        filtered_df.to_csv(index=False).encode("utf-8"),
+        file_name="directory_view.csv",
+        mime="text/csv",
+    )
+
 with tab1:
-    st.header("What's in my perfume?")
-    st.markdown("Search for an ingredient to understand its safety in plain English.")
-    
-    col1, col2 = st.columns([1, 2])
-    with col1:
-        consumer_query = st.selectbox("Select an ingredient to explore:", df["Name"].tolist(), key="consumer_query")
-        
-    with col2:
-        mol_data = df[df["Name"] == consumer_query].iloc[0]
-        st.subheader(f"Ingredient: {mol_data['Name']}")
-        
-        if mol_data["Status"] == "Banned":
-            st.error("🚨 **BANNED** in perfumes.")
-            st.write(f"**Why?** Associated with {mol_data['Safety_Risk']}.")
-        elif mol_data["Status"] == "Restricted":
-            st.warning(f"⚠️ **RESTRICTED** - Safe only in small amounts.")
-            st.write(f"**Limit in Fine Fragrance:** {mol_data['Limit_Cat4']}%")
-            st.write(f"**Why?** May cause {mol_data['Safety_Risk']} if used above limits.")
-        else:
-            st.success("✅ **SAFE / UNREGULATED**")
-            st.write("Considered safe for use without strict IFRA limitations.")
+    st.subheader("Consumer ingredient view")
+    ingredient = st.selectbox("Select ingredient", sorted(df["Name"].tolist()))
+    row = df[df["Name"] == ingredient].iloc[0]
 
-# ==========================================
-# TAB 2: SCIENTIST (Chemist / Formulator)
-# ==========================================
+    st.markdown(f"### {row['Name']}")
+    status = row["Status"]
+
+    if status == "Banned":
+        st.error("BANNED in perfumes.")
+    elif status == "Restricted":
+        st.warning("RESTRICTED. Safe only within concentration limits.")
+    else:
+        st.success("Safe / currently unregulated.")
+
+    st.write(f"**Safety context:** {row['Safety_Risk']}")
+    st.write(f"**Category 4 limit:** {row['Limit_Cat4']}%")
+    st.write(f"**Rule year:** {row['Year']}")
+
 with tab2:
-    st.header("Cheminformatics & Molecular Analogues")
-    st.markdown("Analyze 2D topologies, molecular weights, LogP, and compute safe AI drop-in replacements.")
-    
-    col1, col2 = st.columns([1, 1])
-    
-    with col1:
-        scientist_query = st.selectbox("Select target molecule:", df["Name"].tolist(), key="sci_query")
-        mol_data_sci = df[df["Name"] == scientist_query].iloc[0]
-        
-        st.write(f"**SMILES:** `{mol_data_sci['SMILES']}`")
-        st.write(f"**LogP (Lipophilicity):** {mol_data_sci['LogP']}")
-        
-        if RDKIT_AVAILABLE:
-            mol = Chem.MolFromSmiles(mol_data_sci['SMILES'])
-            if mol:
-                img = Draw.MolToImage(mol, size=(300, 300))
-                st.image(img, caption=f"2D Structure of {scientist_query}")
-        else:
-            st.warning("Install RDKit to view molecular structures.")
-            
-    with col2:
-        st.subheader("Compute Drop-in Replacements")
-        if st.button("Run KNN Similarity Engine", key="knn_btn"):
-            with st.spinner("Computing Jaccard distance over Morgan Fingerprints..."):
-                st.success("Substitutes Found!")
-                if scientist_query == "Lilial":
-                    st.write("1. **Satinaldehyde** (63.3% Match) - Unregulated")
-                    st.write("2. **Cyclamen Aldehyde** (58.1% Match) - Unregulated")
-                elif scientist_query == "Eugenol":
-                    st.write("1. **Ethyl Guaiacol** (62.5% Match) - Unregulated")
-                    st.write("2. **Eugenyl Acetate** (60.5% Match) - Unregulated")
-                else:
-                    st.write("No direct high-risk substitutes needed. Molecule is safe.")
+    st.subheader("Scientist view")
+    target_name = st.selectbox("Select target molecule", sorted(df["Name"].tolist()), key="target")
+    target_row = df[df["Name"] == target_name].iloc[0]
+    target_smiles = str(target_row.get("SMILES", ""))
 
-# ==========================================
-# TAB 3: LEGAL / REGULATORY
-# ==========================================
+    st.write(f"**SMILES:** `{target_smiles}`")
+    st.write(f"**LogP:** {target_row.get('LogP', 0.0)}")
+
+    if RDKIT_AVAILABLE and target_smiles:
+        mol = Chem.MolFromSmiles(target_smiles)
+        if mol is not None:
+            img = Draw.MolToImage(mol, size=(300, 300))
+            st.image(img, caption=f"2D structure of {target_name}")
+    else:
+        st.info("RDKit is not installed in this environment. Structure rendering is disabled.")
+
+    st.markdown("#### Structural replacement candidates")
+    safe_pool = df[df["Category"] == "Safe"]
+
+    if st.button("Compute replacements"):
+        with st.spinner("Computing Tanimoto similarity on Morgan fingerprints..."):
+            repl_df = compute_replacements(target_smiles, safe_pool, top_k=5)
+
+        if repl_df.empty:
+            st.warning("No valid replacement candidates found for this target.")
+        else:
+            st.dataframe(repl_df, use_container_width=True)
+
 with tab3:
-    st.header("IFRA Compliance Auditor & Watchlist")
-    st.markdown("Batch-audit formulas against IFRA standards and monitor early-warning predictive watchlists.")
-    
-    st.subheader("1. Batch Formula Audit")
-    uploaded_file = st.file_uploader("Upload Formula CSV (Ingredient, Percentage)", type=["csv"])
-    if uploaded_file is not None or st.button("Run Test Formula (sample_formula.csv)"):
-        st.code('''
-Report: IFRA CATEGORY 4 COMPLIANCE
---------------------------------------------------
-[❌ FAIL] Eugenol (3.0%) -> Limit 2.5%
-[✅ PASS] Limonene (5.0%)
-[❌ FAIL] Benzyl benzoate (10.0%) -> Limit: 4.8%
---------------------------------------------------
-⚠️ STATUS: NON-COMPLIANT.
-        ''', language='text')
-        
-    st.subheader("2. AI Early Warning Database (Watchlist)")
-    if st.button("Load Banned-Proxy Watchlist"):
-        st.dataframe(pd.DataFrame({
-            "Unregulated Name": ["lilyall", "lime octadienal", "methoxy eugenol"],
-            "Target Proxy": ["Lilial", "Citral", "Eugenol"],
-            "Match %": ["100%", "100%", "92%"],
-            "Predicted Risk": ["Reproductive Toxicity", "Sensitization", "Sensitization"]
-        }))
+    st.subheader("Formula compliance audit")
+    st.write("Upload a CSV with columns: `Ingredient, Percentage`.")
+
+    uploaded = st.file_uploader("Formula CSV", type=["csv"])
+    use_sample = st.button("Use sample_formula.csv")
+
+    formula_df = pd.DataFrame()
+    if uploaded is not None:
+        formula_df = parse_formula_file(uploaded)
+    elif use_sample:
+        formula_df = parse_formula_file(None)
+
+    if not lookup:
+        st.warning("IFRA source data is not available. Audit cannot run.")
+
+    if not formula_df.empty and lookup:
+        report_df = audit_formula(formula_df, lookup)
+
+        fail_count = int((report_df["Status"] == "FAIL").sum())
+        pass_count = int((report_df["Status"] == "PASS").sum())
+
+        c1, c2 = st.columns(2)
+        with c1:
+            st.metric("PASS", pass_count)
+        with c2:
+            st.metric("FAIL", fail_count)
+
+        if fail_count > 0:
+            st.error("Formula is non-compliant for Category 4.")
+        else:
+            st.success("Formula is compliant for Category 4.")
+
+        st.dataframe(report_df, use_container_width=True)
+        st.download_button(
+            "Download audit report",
+            report_df.to_csv(index=False).encode("utf-8"),
+            file_name="ifra_audit_report.csv",
+            mime="text/csv",
+        )
+    elif uploaded is not None and formula_df.empty:
+        st.error("CSV format invalid. Required columns: Ingredient, Percentage")

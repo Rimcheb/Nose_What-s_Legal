@@ -1,14 +1,2 @@
-fastapi
-uvicorn
 streamlit
 pandas
-numpy
-Pillow
-rdkit
-scikit-learn
-tqdm
-pubchempy
-cirpy
-beautifulsoup4
-requests
-pdfplumber
