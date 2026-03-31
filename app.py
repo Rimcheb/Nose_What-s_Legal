@@ -5,6 +5,7 @@ from urllib.request import urlopen
 
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 # Optional RDKit support (app still runs without it)
 try:
@@ -296,23 +297,49 @@ def render_structure(smiles: str, label: str) -> None:
         st.image(img, caption=f"2D structure of {label}")
         return
 
+    # Browser-side rendering fallback using SmilesDrawer.
+    # This avoids server-side RDKit and often works even when API image fallback fails.
+    smiles_js = smiles.replace("\\", "\\\\").replace("`", "\\`")
+    canvas_id = f"mol_canvas_{abs(hash(smiles_js)) % 1_000_000_000}"
+    html = f"""
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <canvas id="{canvas_id}" width="320" height="320" style="border:1px solid #dfe3e8;border-radius:8px;background:#fff;"></canvas>
+      <div style="font-size:12px;color:#4b5563;">2D structure of {label}</div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/smiles-drawer@2.1.7/dist/smiles-drawer.min.js"></script>
+    <script>
+      (function() {{
+        const smiles = `{smiles_js}`;
+        const target = document.getElementById("{canvas_id}");
+        if (!window.SmilesDrawer || !target) return;
+        const drawer = new SmilesDrawer.Drawer({{
+          width: 320,
+          height: 320,
+          bondThickness: 1.2,
+          compactDrawing: true
+        }});
+        SmilesDrawer.parse(smiles, function(tree) {{
+          drawer.draw(tree, target, "light", false);
+        }});
+      }})();
+    </script>
+    """
+    components.html(html, height=360)
+
+    # Additional network-image fallback for environments where JS CDN is blocked.
     encoded = quote(smiles, safe="")
-    fallback_urls = [
+    for url in [
         f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/{encoded}/PNG",
         f"https://cactus.nci.nih.gov/chemical/structure/{encoded}/image",
-    ]
-
-    for url in fallback_urls:
+    ]:
         try:
             with urlopen(url, timeout=8) as response:
                 image_bytes = response.read()
                 if image_bytes:
-                    st.image(image_bytes, caption=f"2D structure of {label}")
+                    st.image(image_bytes)
                     return
         except Exception:
             continue
-
-    st.warning("2D structure rendering is unavailable in this environment.")
 
 
 df = load_directory_data()
