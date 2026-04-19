@@ -114,6 +114,16 @@ def get_directory():
         mols.append(item)
     return mols
 
+
+@app.get("/api/health")
+def get_health():
+    return {
+        "loaded_records": len(MOCK_DB),
+        "ifra_csv_exists": IFRA_CSV_PATH.exists(),
+        "watchlist_csv_exists": WATCHLIST_CSV_PATH.exists(),
+        "base_dir": str(BASE_DIR),
+    }
+
 @app.get("/")
 def serve_home():
     return FileResponse(UI_HTML_PATH)

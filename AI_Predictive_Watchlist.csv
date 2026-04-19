@@ -1,0 +1,70 @@
+Candidate_Name,Candidate_CAS,Candidate_SMILES,Structural_Similarity_Score,Restricted_Twin_Molecule,Restricted_Twin_CAS,AI_Predicted_Risk,AI_Confidence
+amyl cinnamaldehyde,1331-92-6,CCCCC\C(C=O)=C/c1ccccc1,100.0,α-Amyl cinnamic aldehyde,122-40-7;68527-78-6,Skin Sensitization; Systemic Toxicity,100.0
+heptyl salicylate,6259-77-4,CCCCCCCOC(=O)c1ccccc1O,100.0,Hexyl salicylate,6259-76-3,Skin Sensitization; Systemic Toxicity,80.0
+hexyl cinnamaldehyde,165184-98-5,CCCCCCC(=CC1=CC=CC=C1)C=O,100.0,α-Hexyl cinnamic aldehyde,101-86-0;67924-13-4,Skin Sensitization; Systemic Toxicity,100.0
+hydroxycitronellal,34212-48-1,CC(CCCC(C)(C)O)CC=O,100.0,Hydroxycitronellal,107-75-5;68527-79-7;89-43-0,Skin Sensitization; Systemic Toxicity,96.0
+lauryl salicylate,1160-35-6,CCCCCCCCCCCCOC(=O)C1=CC=CC=C1O,100.0,Hexyl salicylate,6259-76-3,Skin Sensitization; Systemic Toxicity,80.0
+lilyall,75166-31-3,CC(CC1=CC=C(C=C1)C(C)(C)C)C=O,100.0,p-tert-Butyl-α-methylhydrocinnamic aldehyde (p-BMHCA),80-54-6;91-51-0,Skin Sensitization; Systemic Toxicity,100.0
+lilyall,75166-30-2,CC(CC1=CC=C(C=C1)C(C)(C)C)C=O,100.0,p-tert-Butyl-α-methylhydrocinnamic aldehyde (p-BMHCA),80-54-6;91-51-0,Skin Sensitization; Systemic Toxicity,100.0
+lime octadienal,147060-73-9,CC(=CCCC(=CC=O)C)C,100.0,Citral,5392-40-5;141-27-5;106-26-3;8014-71-9;68917-80-6;8007-75-8;68648-33-9;8000-66-6;8023-82-3;68991-25-3;8000-29-1;233683-84-6;799259-56-6;92201-64-4;8000-46-2;68916-44-9;8007-08-7;8016-20-4;68916-46-1;938464-05-2;84929-31-7;8008-56-8;68648-39-5;68916-89-2;68917-33-9;72869-82-0;8007-02-1;8008-26-2;68917-71-5;68916-83-6;68916-84-7;93685-55-3;68855-99-2;68917-20-4;8016-33-9;1370641-98-7;93686-22-7;68514-75-0;8016-38-4;68916-04-1;8008-57-9;68916-02-9;68606-94-0,Skin Sensitization; Systemic Toxicity,99.0
+limonene,6876-12-6,CC(=C)C1CCC(=CC1)C,100.0,Limonene,138-86-3;7705-14-8;5989-27-5;5989-54-8,Skin Sensitization,83.0
+methyl-(E)-cinnamaldehyde,15174-47-7,CC(=CC1=CC=CC=C1)C=O,100.0,α-Methyl cinnamic aldehyde,101-39-3,Skin Sensitization; Systemic Toxicity,98.0
+methyl cinnamyl alcohol,1504-55-8,CC(O)/C=C/c1ccccc1,100.0,4-Phenyl-3-buten-2-ol,17488-65-2,Skin Sensitization; Systemic Toxicity,98.0
+methyl 4-isopropyl-1-methyl bicyclo(2.2.2)oct-5-ene-2-carboxylate,67392-15-8,COC(=O)C1CC2(CCC1(C)C=C2)C(C)C,100.0,4-Methyl-1-propan-2-ylbicyclo[2.2.2]oct-2-ene-8-carboxylate,68966-86-9,Skin Sensitization; Systemic Toxicity,61.0
+naphthyl) ethan-1-one (mixed isomers),1333-52-4,CC(=O)c1ccc2ccccc2c1,100.0,Methyl β-naphthyl ketone,93-08-3,Phototoxicity,89.0
+nerol,106-25-2,CC(C)=CCC\C(C)=C/CO,100.0,Geraniol,106-24-1;68991-20-8;8014-71-9;8015-73-4;8007-75-8;68648-33-9;68606-83-7;8000-66-6;8015-88-1;8023-82-3;8000-29-1;91771-50-5;8016-63-5;8008-52-4;92201-64-4;8021-29-2;90131-21-8;8000-46-2;68916-44-9;8007-08-7;8023-92-5;68916-46-1;8023-95-8;8022-91-1;8007-04-3;8023-94-7;8024-43-9;8002-68-4;938464-05-2;8007-48-5;8022-15-9;8000-28-0;93685-88-2;84929-31-7;8008-56-8;68648-39-7;68916-89-2;8007-02-1,Skin Sensitization; Systemic Toxicity,53.6
+nootkatone,91416-23-8,CC1CC(=O)C=C2CCC(CC12C)C(C)=C,100.0,Nootkatone,4674-50-4,Skin Sensitization,85.0
+octen-2-one,18402-82-9,CCCCC=CC(=O)C,100.0,3-Octen-2-one,1669-44-9,Skin Sensitization; Systemic Toxicity,90.0
+octen-2-one,51193-77-2,CCCCC=CC(=O)C,100.0,3-Octen-2-one,1669-44-9,Skin Sensitization; Systemic Toxicity,90.0
+octyl salicylate,6969-49-9,CCCCCCCCOC(=O)c1ccccc1O,100.0,Hexyl salicylate,6259-76-3,Skin Sensitization; Systemic Toxicity,80.0
+perillaldehyde,18031-40-8,CC(=C)C1CCC(=CC1)C=O,100.0,Perilla aldehyde,2111-75-3;8000-42-8;8023-92-5;68916-46-1;68916-84-7;8008-26-2;68916-04-1;68606-94-0;8008-57-9;68132-21-8,Skin Sensitization; Systemic Toxicity,95.0
+polylimonene,9003-73-0,CC(=C)C1CCC(=CC1)C,100.0,Limonene,138-86-3;7705-14-8;5989-27-5;5989-54-8,Skin Sensitization,83.0
+strawberry furanone,131222-82-7,CC1OC(=C(O)C1=O)C,100.0,"4-Hydroxy-2,5-dimethyl-3(2H)-furanone",3658-77-3,Skin Sensitization; Systemic Toxicity,99.0
+strawberry furanone,131222-81-6,CC1OC(=C(O)C1=O)C,100.0,"4-Hydroxy-2,5-dimethyl-3(2H)-furanone",3658-77-3,Skin Sensitization; Systemic Toxicity,99.0
+terpenes and terpenoids,65996-98-7,CC(=C)C1CCC(=CC1)C,100.0,Limonene,138-86-3;7705-14-8;5989-27-5;5989-54-8,Skin Sensitization,83.0
+turpentine oil terpenes limonene fraction,65996-99-8,CC1=CCC(CC1)C(=C)C,100.0,Limonene,138-86-3;7705-14-8;5989-27-5;5989-54-8,Skin Sensitization,83.0
+undecadien-1-ol,59376-58-8,CCCCCC\C=C/C=C\CO,100.0,"2,4-Dodecadien-1-ol, (2E, 4E)",18485-38-6,Skin Sensitization; Systemic Toxicity,70.67
+undecalactone,108861-13-8,C1CCCCCOC(=O)CCCC1,100.0,Cyclopentadecanolide,106-02-5;8015-64-3;8023-91-4,Skin Sensitization; Systemic Toxicity,96.0
+undecanolactone,39282-36-5,O=C1CCCCCCCCCCO1,100.0,Cyclopentadecanolide,106-02-5;8015-64-3;8023-91-4,Skin Sensitization; Systemic Toxicity,96.0
+hexenyl isovalerate,10032-11-8,CC\C=C/CCOC(=O)CC(C)C,100.0,cis-3-Hexenyl isovalerate,35154-45-1,Skin Sensitization; Systemic Toxicity,83.0
+hydroxycitronellal,34212-53-8,CC(CCCC(C)(C)O)CC=O,100.0,Hydroxycitronellal,107-75-5;68527-79-7;89-43-0,Skin Sensitization; Systemic Toxicity,96.0
+hepten-1-yl acetate,1576-77-8,CCC/C=C/CCOC(C)=O,100.0,cis-3-Heptenyl acetate,1576-78-9,Skin Sensitization; Systemic Toxicity,93.0
+heptenal,2463-63-0,CCCC\C=C\C=O,100.0,trans-2-Heptenal,18829-55-5,Skin Sensitization,86.0
+"carvone-5,6-oxide",18383-49-8,CC(=C)[C@@H]1C[C@H]2O[C@@]2(C)C(=O)C1,100.0,Carvone oxide,33204-74-9,Skin Sensitization,84.0
+carvyl acetate,7053-79-4,CC(=C)[C@@H]1CC=C(C)[C@H](C1)OC(C)=O,100.0,Carvyl acetate,97-42-7;1205-42-1;1134-95-8,Skin Sensitization; Systemic Toxicity,88.0
+carvyl acetate,7111-29-7,CC(=C)[C@H]1CC=C(C)[C@H](C1)OC(C)=O,100.0,Carvyl acetate,97-42-7;1205-42-1;1134-95-8,Skin Sensitization; Systemic Toxicity,88.0
+cinnamaldehyde,14371-10-9,O=C/C=C/c1ccccc1,100.0,Cinnamic aldehyde,104-55-2;8007-80-5;8015-91-6;97659-68-2;8023-94-7;8046-19-3;8024-03-1;94386-48-8,Skin Sensitization; Systemic Toxicity,100.0
+cinnamaldehyde,57194-69-1,O=C\C=C/c1ccccc1,100.0,Cinnamic aldehyde,104-55-2;8007-80-5;8015-91-6;97659-68-2;8023-94-7;8046-19-3;8024-03-1;94386-48-8,Skin Sensitization; Systemic Toxicity,100.0
+cinnamaldehyde dimethyl acetal,63511-93-3,COC(C=CC1=CC=CC=C1)OC,100.0,Cinnamic aldehyde dimethyl acetal,4364-06-1,Skin Sensitization; Systemic Toxicity,97.0
+cinnamyl alcohol,4407-36-7,OC/C=C/c1ccccc1,100.0,Cinnamic alcohol,104-54-1;8007-80-5;8015-91-6;97659-68-2;8023-94-7;103798-23-6;8046-19-3;8024-03-1,Skin Sensitization; Systemic Toxicity,98.33
+cinnamyl alcohol,4510-34-3,OC/C=C/c1ccccc1,100.0,Cinnamic alcohol,104-54-1;8007-80-5;8015-91-6;97659-68-2;8023-94-7;103798-23-6;8046-19-3;8024-03-1,Skin Sensitization; Systemic Toxicity,98.33
+citrol,624-15-7,CC(C)=CCC\C(C)=C\CO,100.0,Geraniol,106-24-1;68991-20-8;8014-71-9;8015-73-4;8007-75-8;68648-33-9;68606-83-7;8000-66-6;8015-88-1;8023-82-3;8000-29-1;91771-50-5;8016-63-5;8008-52-4;92201-64-4;8021-29-2;90131-21-8;8000-46-2;68916-44-9;8007-08-7;8023-92-5;68916-46-1;8023-95-8;8022-91-1;8007-04-3;8023-94-7;8024-43-9;8002-68-4;938464-05-2;8007-48-5;8022-15-9;8000-28-0;93685-88-2;84929-31-7;8008-56-8;68648-39-7;68916-89-2;8007-02-1,Skin Sensitization; Systemic Toxicity,53.6
+citronellal,2385-77-5,C[C@H](CCC=C(C)C)CC=O,100.0,Citronellal,106-23-0;5949-05-3;8014-71-9;68991-25-3;8000-29-1;91771-50-5;93686-22-7;85203-56-1;8024-15-5;8000-46-2;8007-08-7;8016-20-4;68916-46-1;938464-05-2;84929-31-7;8008-56-8;68648-39-6;68916-89-2;8007-02-1;68916-83-6;8008-26-2;93685-55-3;68855-99-2;68917-20-4;1370641-98-7;68606-94-0;8008-57-9;8014-17-3;8048-51-9;84929-38-4;8007-01-0;72869-73-9;8016-85-1;68607-01-2,Skin Sensitization,63.0
+civet decenone,74244-64-7,O=C1CCCCCCC\C=C/CCCCCCC1,100.0,Cyclohexadecenone,3100-36-5;88642-03-9;5365-06-0;2550-59-6;5120-20-7;854373-71-0;854373-70-9,Skin Sensitization; Systemic Toxicity,99.0
+civet decenone,1502-37-0,C1CCCC=CCCCCCCCC(=O)CCC1,100.0,Cyclohexadecenone,3100-36-5;88642-03-9;5365-06-0;2550-59-6;5120-20-7;854373-71-0;854373-70-9,Skin Sensitization; Systemic Toxicity,99.0
+civet decenone,542-46-1,O=C1CCCCCCC\C=C/CCCCCCC1,100.0,Cyclohexadecenone,3100-36-5;88642-03-9;5365-06-0;2550-59-6;5120-20-7;854373-71-0;854373-70-9,Skin Sensitization; Systemic Toxicity,99.0
+cyclohexanone,108-94-1,O=C1CCCCC1,100.0,Cyclohexadecanone,2550-52-9,Skin Sensitization; Systemic Toxicity,97.0
+vetiveryl acetate,117-98-6,CC1CC(OC(C)=O)C=C(C)C2CC(CC12)=C(C)C,100.0,Acetylated Vetiver oil,84082-84-8;68917-34-0;73246-97-6;62563-80-8,Skin Sensitization; Systemic Toxicity,97.0
+eugenyl acetate,5912-87-8,CC=CC1=CC(=C(C=C1)OC(=O)C)OC,100.0,Isoeugenyl acetate,93-29-8,Skin Sensitization; Systemic Toxicity,94.0
+dihydrocivetone,3661-77-6,O=C1CCCCCCCCCCCCCCCC1,100.0,Cyclohexadecanone,2550-52-9,Skin Sensitization; Systemic Toxicity,97.0
+cyclotetradecanone,3603-99-4,O=C1CCCCCCCCCCCCC1,100.0,Cyclohexadecanone,2550-52-9,Skin Sensitization; Systemic Toxicity,97.0
+exaltone (Firmenich),502-72-7,O=C1CCCCCCCCCCCCCC1,100.0,Cyclohexadecanone,2550-52-9,Skin Sensitization; Systemic Toxicity,97.0
+hexyl cinnamaldehyde diethyl acetal,67845-59-4,CCCCCC\C(=C/c1ccccc1)C(OCC)OCC,96.97,alpha-Amylcinnamicaldehyde diethyl acetal,60763-41-9,Skin Sensitization; Systemic Toxicity,99.0
+amyl salicylate,2050-08-0,CCCCCOC(=O)c1ccccc1O,96.77,Hexyl salicylate,6259-76-3,Skin Sensitization; Systemic Toxicity,80.0
+dodecenolactone,16400-72-9,CCCCCCCC1CC=CC(=O)O1,96.67,Massoia lactone,54814-64-1;51154-96-2,Skin Sensitization,66.0
+hexyl vinyl carbinyl acetate,31795-37-6,CCCCCCC(OC(C)=O)C=C,96.43,1-Octen-3-yl acetate,2442-10-6;8006-78-8;8022-15-9;8000-28-0;93685-88-2;68917-15-7;8008-79-5,Skin Sensitization; Systemic Toxicity,96.0
+hydroxymethyl hexyl ethyl ketone,59191-78-5,CCCCCC(CO)C(C)=O,95.65,Methyl lavender ketone,67801-33-6;67633-95-8,Skin Sensitization; Systemic Toxicity,82.67
+decadien-1-ol,16195-71-4,CCCCCC=CC=CCO,95.24,"2,4-Dodecadien-1-ol, (2E, 4E)",18485-38-6,Skin Sensitization; Systemic Toxicity,70.67
+decadien-1-ol,18409-21-7,CCCCC/C=C/C=C/CO,95.24,"2,4-Dodecadien-1-ol, (2E, 4E)",18485-38-6,Skin Sensitization; Systemic Toxicity,70.67
+decadien-1-ol,14507-02-9,CCCCC/C=C/C=C/CO,95.24,"2,4-Dodecadien-1-ol, (2E, 4E)",18485-38-6,Skin Sensitization; Systemic Toxicity,70.67
+musk amberol,37609-25-9,O=C1CCCCCCCCCC\C=C/CCC1,94.44,Cyclohexadecenone,3100-36-5;88642-03-9;5365-06-0;2550-59-6;5120-20-7;854373-71-0;854373-70-9,Skin Sensitization; Systemic Toxicity,99.0
+cyclopentanone,120-92-3,O=C1CCCC1,90.91,Cyclohexadecanone,2550-52-9,Skin Sensitization; Systemic Toxicity,96.0
+musk pentane,35720-57-1,O=C1CCCCCCCCCC\C=C/CC1,89.47,Cyclohexadecenone,3100-36-5;88642-03-9;5365-06-0;2550-59-6;5120-20-7;854373-71-0;854373-70-9,Skin Sensitization; Systemic Toxicity,98.0
+musk pentane,14595-54-1,O=C1CCCCCCCCCC\C=C/CC1,89.47,Cyclohexadecenone,3100-36-5;88642-03-9;5365-06-0;2550-59-6;5120-20-7;854373-71-0;854373-70-9,Skin Sensitization; Systemic Toxicity,98.0
+butyl salicylate,2052-14-4,CCCCOC(=O)c1ccccc1O,87.5,Hexyl salicylate,6259-76-3,Skin Sensitization; Systemic Toxicity,80.0
+nonen-2-one,14309-57-0,CCCCC/C=C/C(C)=O,86.36,3-Octen-2-one,1669-44-9,Skin Sensitization; Systemic Toxicity,91.0
+musk lactone,3391-83-1,O=C1CCCCCCCCCOCCCCCO1,85.0,Cyclopentadecanolide,106-02-5;8015-64-3;8023-91-4,Skin Sensitization; Systemic Toxicity,93.0
+musk nonane,1725-01-5,O=C1CCCCCCCCOCCCCCCO1,85.0,Cyclopentadecanolide,106-02-5;8015-64-3;8023-91-4,Skin Sensitization; Systemic Toxicity,93.0
+octenal,2363-89-5,CCCCC\C=C\C=O,85.0,trans-2-Heptenal,18829-55-5,Skin Sensitization,55.0
+musk decanolide,6707-60-4,O=C1CCCCCCCCCCOCCCCO1,85.0,Cyclopentadecanolide,106-02-5;8015-64-3;8023-91-4,Skin Sensitization; Systemic Toxicity,93.0
+octenal,2548-87-0,CCCCC\C=C\C=O,85.0,trans-2-Heptenal,18829-55-5,Skin Sensitization,55.0

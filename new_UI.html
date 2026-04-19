@@ -3097,6 +3097,7 @@ function wireAuditUpload() {
    INIT
    ===================================================== */
 async function loadDirectory() {
+  const isLocalHost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
   let data = null;
   try {
     const response = await fetch("/api/directory");
@@ -3104,7 +3105,24 @@ async function loadDirectory() {
   } catch (_) { /* demo fallback */ }
 
   if (!data || !Array.isArray(data) || data.length === 0) {
-    data = DEMO_INGREDIENTS;
+    if (isLocalHost) {
+      data = DEMO_INGREDIENTS;
+    } else {
+      state.ingredients = [];
+      refreshOdorCategoryFilterOptions();
+      renderMetrics();
+      const container = document.getElementById("ingredients");
+      if (container) {
+        container.innerHTML = `
+          <article class="card" style="border-color: rgba(196,45,53,0.45);">
+            <h3 class="card-title">Directory unavailable</h3>
+            <div class="card-risk">API returned no ingredients. This is a server data-load issue, not a filter issue.</div>
+            <div class="pill">Check /api/health and server logs</div>
+          </article>
+        `;
+      }
+      return;
+    }
   }
 
   state.ingredients = data.map(mapDirectoryItem);
