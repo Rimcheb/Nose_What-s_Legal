@@ -60,6 +60,13 @@ Two interfaces are provided:
 - `main.py`: FastAPI backend with searchable molecule and audit endpoints.
 - `app.py`: Streamlit dashboard for directory browsing, chemist/regulatory views, and compliance demonstration.
 
+#### Dashboard Features:
+- **Directory Tab**: Browse all regulated and high-risk molecules with search, filter, and sort capabilities.
+- **Consumer View**: Simple ingredient lookup with regulatory status, safety context, and concentration limits.
+- **Scientist View**: Detailed molecular profiles with SMILES notation, LogP descriptors, and structure visualization (2D rendering via RDKit or SmilesDrawer).
+- **Regulatory Audit**: Formula compliance checker that validates ingredient concentrations against IFRA Category 4 limits.
+- **Odor Network**: Interactive force-directed graph visualizing fragrance ingredients grouped by odor families (musk, vanilla, floral, citrus, woody, spicy, fresh, green, powdery, fruity, aldehydic). Musk and vanilla nodes are highlighted for regulatory importance. Powered by vis-network library for dynamic exploration.
+
 Recent product updates in the FastAPI + web UI flow include:
 - structure-based odor inference (`odor_profile`, `odor_basis`, `odor_confidence`),
 - confidence- and category-based odor filters,
