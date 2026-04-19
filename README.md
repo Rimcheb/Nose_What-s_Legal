@@ -1,7 +1,11 @@
-# Fragrance AI Compliance System
+# Smell Good, Legally.
+
+### Fragrance AI Compliance System
 
 ## Overview
-This project builds an end-to-end cheminformatics workflow for fragrance regulatory analysis, focused on IFRA Category 4 (Fine Fragrance) use-cases.
+Smell Good, Legally. is the product slogan for this project.
+
+This repository builds an end-to-end cheminformatics workflow for fragrance regulatory analysis, focused on IFRA Category 4 (Fine Fragrance) use-cases.
 
 The system connects:
 - document-derived regulatory data,
@@ -15,6 +19,7 @@ It is designed to answer practical formulation questions:
 - Which unregulated molecules are structurally high-risk?
 - What safer structural alternatives are available?
 - Is a formula compliant with IFRA Category 4 concentration limits?
+- What a molecule could smell like (structure-based estimate with confidence)?
 
 ## What This Project Implements
 
@@ -53,6 +58,13 @@ Two interfaces are provided:
 - `main.py`: FastAPI backend with searchable molecule and audit endpoints.
 - `app.py`: Streamlit dashboard for directory browsing, chemist/regulatory views, and compliance demonstration.
 
+Recent product updates in the FastAPI + web UI flow include:
+- structure-based odor inference (`odor_profile`, `odor_basis`, `odor_confidence`),
+- confidence- and category-based odor filters,
+- confidence-colored odor tag chips in cards/intel/sidebar,
+- restricted ingredient grouping by B/C/D grades,
+- resilient 3D handling with fallback behavior when coordinates are unavailable.
+
 ## Reported Outcomes
 From the project runs documented in this repository:
 - ~484 restricted ingredient profiles extracted and normalized.
@@ -65,7 +77,8 @@ From the project runs documented in this repository:
 - `app.py`: Streamlit interface
 - `streamlit_app.py`: Streamlit Community Cloud entrypoint
 - `main.py`: FastAPI service
-- `public/index.html`: static frontend entry
+- `new_UI.html`: FastAPI-served frontend entry
+- `public/index.html`: legacy static entry
 - `scripts/extract_ifra_category4.py`: IFRA extraction utility
 - `scripts/fetch_smiles.py`: SMILES resolution utility
 - `scripts/featurize_molecules.py`: RDKit feature generation
@@ -136,6 +149,11 @@ python3 scripts/formula_auditor.py --formula sample_formula.csv
 - `GET /api/molecule/{name}`: molecule detail payload including optional computed properties
 - `POST /api/audit`: batch compliance audit
 
+Odor-related fields returned by directory/molecule endpoints:
+- `odor_profile`
+- `odor_basis`
+- `odor_confidence`
+
 ## Current Scope and Limitations
 - The workflow is centered on IFRA Category 4 analysis.
 - Structure resolution quality is bounded by external resolver coverage and naming consistency.
@@ -154,6 +172,21 @@ The app is cloud-ready by default:
 - `requirements.txt` is deployment-focused and lightweight.
 - `.streamlit/config.toml` contains server/theme defaults.
 - The UI gracefully handles environments where RDKit is unavailable.
+
+## Public Deployment (Render, FastAPI)
+Use this when you want the FastAPI + `new_UI.html` experience publicly available.
+
+Build command:
+```bash
+pip install --upgrade pip && pip install -r requirements-full.txt
+```
+
+Start command:
+```bash
+uvicorn main:app --host 0.0.0.0 --port $PORT
+```
+
+You can deploy directly with the existing `render.yaml` blueprint.
 
 ## Next Engineering Priorities
 - Improve structured extraction coverage and validation for additional IFRA classes/categories.
