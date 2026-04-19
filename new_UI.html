@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Italiana&family=Manrope:wght@300;400;500;600;700&family=Caveat:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 
 <style>
 /* ============================================================
@@ -1783,6 +1784,7 @@ body::before {
   .search { justify-self: stretch; width: 100%; }
   .edition { text-align: left; }
   .tabs { padding: 1rem 1.5rem; gap: 1.8rem; overflow-x: auto; }
+  .network-canvas { height: 480px; }
   .view { padding: 2rem 1.5rem 4rem; }
   .editorial-header { grid-template-columns: 1fr; gap: 1rem; }
   .editorial-header .subline { text-align: left; justify-self: start; }
@@ -1803,6 +1805,76 @@ body::before {
   }
 }
 </style>
+
+<style>
+/* ============================================================
+   ODOR NETWORK VIEW
+   ============================================================ */
+.network-wrap { position: relative; margin-top: 2rem; }
+
+.network-canvas {
+  width: 100%;
+  height: 560px;
+  background: var(--espresso);
+  border: 1px solid rgba(201,166,107,0.15);
+  border-radius: 2px;
+}
+:root[data-theme="light"] .network-canvas { border-color: rgba(46,32,24,0.18) !important; }
+
+.network-legend {
+  position: absolute;
+  top: 14px; right: 14px;
+  background: rgba(14,10,8,0.88);
+  padding: 10px 14px;
+  border-radius: 5px;
+  border: 1px solid rgba(201,166,107,0.2);
+  font-family: var(--font-body);
+  color: var(--cream);
+  min-width: 130px;
+  max-height: 520px;
+  overflow-y: auto;
+  z-index: 5;
+}
+:root[data-theme="light"] .network-legend {
+  background: rgba(245,237,227,0.92);
+  border-color: rgba(46,32,24,0.2);
+}
+.network-legend-title {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 8px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid rgba(201,166,107,0.2);
+}
+.network-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 4px 0;
+  font-size: 11px;
+  opacity: 0.85;
+}
+.network-legend-item.highlighted { opacity: 1; font-weight: 600; }
+.network-legend-dot {
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1.5px solid;
+}
+.network-status {
+  text-align: center;
+  padding: 0.4rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.07em;
+  color: var(--gold);
+  opacity: 0.55;
+  font-family: var(--font-body);
+  margin-top: 0.5rem;
+}
+</style>
+
 </head>
 <body>
 
@@ -1853,6 +1925,9 @@ body::before {
   </button>
   <button class="tab" data-view="audit" role="tab">
     <span class="numeral">III.</span> Audit Réglementaire
+  </button>
+  <button class="tab" data-view="network" role="tab">
+    <span class="numeral">IV.</span> Réseau Olfactif
   </button>
 </nav>
 
@@ -2068,6 +2143,46 @@ body::before {
     </div>
     <div class="audit-results" id="audit-results"></div>
   </div>
+</section>
+
+<!-- ============================================================
+     VIEW 4 — ODOR NETWORK
+     ============================================================ -->
+<section class="view" id="view-network">
+  <header class="editorial-header">
+    <div>
+      <span class="eyebrow">Volume IV · Réseau</span>
+      <h1 data-spray>The <em>Olfactory</em><br>Network</h1>
+    </div>
+    <div class="script">— molecules that smell alike</div>
+    <div class="subline">
+      Each node is a fragrance ingredient. Nodes of the same colour share an odour family — they <em>smell alike</em>. Edges connect neighbours within the same family. Musk &amp; Vanilla are highlighted. Click any node to open its full dossier.
+    </div>
+  </header>
+
+  <div class="filterbar">
+    <div class="filters" id="network-family-filters">
+      <button class="filter active" data-family="all">Tout voir</button>
+      <span class="dot">·</span>
+      <button class="filter" data-family="musk">Musk</button>
+      <span class="dot">·</span>
+      <button class="filter" data-family="vanilla">Vanilla</button>
+      <span class="dot">·</span>
+      <button class="filter" data-family="floral">Floral</button>
+      <span class="dot">·</span>
+      <button class="filter" data-family="citrus">Citrus</button>
+      <span class="dot">·</span>
+      <button class="filter" data-family="woody">Woody</button>
+    </div>
+  </div>
+
+  <div class="network-wrap">
+    <div id="network-canvas" class="network-canvas"></div>
+    <div id="network-legend" class="network-legend">
+      <div class="network-legend-title">Odour Families</div>
+    </div>
+  </div>
+  <div id="network-status" class="network-status">Select the tab to load the network…</div>
 </section>
 
 <!-- ============================================================
@@ -3153,6 +3268,233 @@ loadDirectory().then(() => {
   // Trigger initial spray on the active view
   setTimeout(() => sprayAllInView("directory"), 400);
 }).catch((error) => console.error(error));
+
+/* =====================================================
+   ODOR NETWORK
+   ===================================================== */
+const FAMILY_PALETTE = {
+  musk:      { bg: "#C4955A", border: "#8B6A3A" },
+  vanilla:   { bg: "#E8D5A0", border: "#C0A050" },
+  citrus:    { bg: "#D4B840", border: "#9A8820" },
+  floral:    { bg: "#C87080", border: "#904050" },
+  woody:     { bg: "#6A8050", border: "#3A5530" },
+  spicy:     { bg: "#CC7040", border: "#8A4820" },
+  fresh:     { bg: "#60AABB", border: "#306878" },
+  green:     { bg: "#80BB50", border: "#508030" },
+  powdery:   { bg: "#B888B8", border: "#885588" },
+  fruity:    { bg: "#CC6850", border: "#8A4030" },
+  aldehydic: { bg: "#B0A060", border: "#787040" },
+  other:     { bg: "#888888", border: "#555555" },
+};
+
+const HIGHLIGHT_FAMILIES = new Set(["musk", "vanilla"]);
+
+let networkInstance = null;
+let networkAllNodes = [];
+let networkAllEdges = [];
+let networkDataSets = null;
+let networkLoaded = false;
+
+function buildNetworkLegend(familyCounts) {
+  const legend = document.getElementById("network-legend");
+  if (!legend) return;
+  let html = '<div class="network-legend-title">Odour Families</div>';
+  Object.keys(FAMILY_PALETTE).forEach((fam) => {
+    const count = familyCounts[fam] || 0;
+    if (count === 0) return;
+    const pal = FAMILY_PALETTE[fam];
+    const hi = HIGHLIGHT_FAMILIES.has(fam) ? " highlighted" : "";
+    html += `
+      <div class="network-legend-item${hi}">
+        <div class="network-legend-dot" style="background:${pal.bg};border-color:${pal.border};"></div>
+        <span>${fam.charAt(0).toUpperCase() + fam.slice(1)} (${count})</span>
+      </div>`;
+  });
+  legend.innerHTML = html;
+}
+
+function applyNetworkFamilyFilter(family) {
+  if (!networkDataSets) return;
+  const { nodesDS, edgesDS } = networkDataSets;
+
+  const visibleIds = new Set();
+  networkAllNodes.forEach((n) => {
+    if (family === "all" || n._family === family) visibleIds.add(n.id);
+  });
+
+  nodesDS.clear();
+  edgesDS.clear();
+  nodesDS.add(networkAllNodes.filter((n) => visibleIds.has(n.id)));
+  edgesDS.add(networkAllEdges.filter((e) => visibleIds.has(e.from) && visibleIds.has(e.to)));
+}
+
+function wireNetworkFilters() {
+  const container = document.getElementById("network-family-filters");
+  if (!container) return;
+  container.querySelectorAll(".filter").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      container.querySelectorAll(".filter").forEach((x) => x.classList.remove("active"));
+      btn.classList.add("active");
+      applyNetworkFamilyFilter(btn.dataset.family || "all");
+    });
+  });
+}
+
+async function loadNetwork() {
+  if (networkLoaded) return;
+
+  const statusEl = document.getElementById("network-status");
+  if (statusEl) statusEl.textContent = "Fetching ingredient data…";
+
+  let raw = [];
+  try {
+    const res = await fetch("/api/network");
+    if (res.ok) raw = await res.json();
+  } catch (_) {}
+
+  // Fallback: derive from already-loaded directory data
+  if (!raw.length && state.ingredients.length) {
+    raw = state.ingredients.map((item, i) => ({
+      id: i,
+      name: item.name,
+      odor_family: item.odorCategories && item.odorCategories.length ? item.odorCategories[0] : "other",
+      status: item.status,
+      limit: item.limit,
+      smiles: item.smiles,
+    }));
+  }
+
+  if (!raw.length) {
+    if (statusEl) statusEl.textContent = "No ingredient data available.";
+    return;
+  }
+
+  if (statusEl) statusEl.textContent = "Building network…";
+
+  // Build nodes
+  const familyCounts = {};
+  const familyIdMap = {};
+
+  networkAllNodes = raw.map((item) => {
+    const fam = item.odor_family || "other";
+    const pal = FAMILY_PALETTE[fam] || FAMILY_PALETTE.other;
+    const hi = HIGHLIGHT_FAMILIES.has(fam);
+    const limitLabel = Number.isFinite(Number(item.limit)) ? `${item.limit}%` : "—";
+    familyCounts[fam] = (familyCounts[fam] || 0) + 1;
+    if (!familyIdMap[fam]) familyIdMap[fam] = [];
+    familyIdMap[fam].push(item.id);
+
+    const label = String(item.name || "").length > 20
+      ? String(item.name).slice(0, 19) + "…"
+      : String(item.name || "");
+
+    return {
+      id: item.id,
+      label,
+      title: `<b>${escapeHtml(item.name)}</b><br>Family: ${fam}<br>Status: ${escapeHtml(String(item.status || ""))}<br>Limit: ${limitLabel}`,
+      color: {
+        background: pal.bg,
+        border: pal.border,
+        highlight: { background: "#FFFF99", border: "#CC6600" },
+        hover: { background: "#FFFFCC", border: "#AA4400" },
+      },
+      size: hi ? 20 : 13,
+      font: { size: hi ? 12 : 9, color: "#1a1a1a" },
+      borderWidth: hi ? 3 : 1,
+      _family: fam,
+      _name: item.name,
+    };
+  });
+
+  // Edges: connect molecules in the same family (cap per-family to avoid overload)
+  networkAllEdges = [];
+  let eid = 0;
+  Object.entries(familyIdMap).forEach(([fam, ids]) => {
+    const pal = FAMILY_PALETTE[fam] || FAMILY_PALETTE.other;
+    const cap = ids.slice(0, 12);
+    for (let a = 0; a < cap.length; a++) {
+      for (let b = a + 1; b < cap.length; b++) {
+        networkAllEdges.push({
+          id: eid++,
+          from: cap[a],
+          to: cap[b],
+          color: { color: pal.border, opacity: 0.22 },
+          width: 1,
+        });
+      }
+    }
+  });
+
+  buildNetworkLegend(familyCounts);
+
+  const nodesDS = new vis.DataSet(networkAllNodes);
+  const edgesDS = new vis.DataSet(networkAllEdges);
+  networkDataSets = { nodesDS, edgesDS };
+
+  const container = document.getElementById("network-canvas");
+  if (!container) return;
+
+  const theme = document.documentElement.getAttribute("data-theme") || "light";
+  container.style.background = theme === "light" ? "#F0E8DC" : "#12100E";
+
+  networkInstance = new vis.Network(
+    container,
+    { nodes: nodesDS, edges: edgesDS },
+    {
+      physics: {
+        solver: "forceAtlas2Based",
+        forceAtlas2Based: {
+          gravitationalConstant: -55,
+          centralGravity: 0.004,
+          springLength: 130,
+          springConstant: 0.09,
+          damping: 0.45,
+          avoidOverlap: 0.6,
+        },
+        stabilization: { iterations: 200 },
+      },
+      nodes: { shape: "dot", shadow: { enabled: true, size: 6, x: 2, y: 2 } },
+      edges: { smooth: { enabled: true, type: "continuous" } },
+      interaction: {
+        hover: true,
+        tooltipDelay: 150,
+        hideEdgesOnDrag: true,
+        navigationButtons: true,
+      },
+    }
+  );
+
+  networkInstance.on("click", (params) => {
+    if (params.nodes.length > 0) {
+      const nodeId = params.nodes[0];
+      const node = networkAllNodes.find((n) => n.id === nodeId);
+      if (node && node._name) {
+        loadMolecule(node._name);
+      }
+    }
+  });
+
+  networkInstance.on("stabilizationIterationsDone", () => {
+    if (statusEl) statusEl.textContent = `${raw.length} ingredients · ${Object.keys(familyCounts).length} families · click a node to open its dossier`;
+  });
+
+  networkLoaded = true;
+}
+
+// Hook: load network when its tab is first activated
+(function patchNetworkTab() {
+  const originalSetActiveView = setActiveView;
+  window._networkTabHooked = true;
+  document.querySelectorAll(".tab").forEach((tab) => {
+    if (tab.dataset.view === "network") {
+      tab.addEventListener("click", () => {
+        setTimeout(loadNetwork, 350);
+      });
+    }
+  });
+})();
+
+wireNetworkFilters();
 </script>
 
 </body>

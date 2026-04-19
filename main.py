@@ -105,6 +105,71 @@ except Exception as e:
 
 print(f"Loaded ingredient records: {len(MOCK_DB)}")
 
+ODOR_FAMILY_KEYWORDS_NET = {
+    "musk":      ["musk", "ambrette", "galaxolide", "habanolide", "ambrettolide", "exaltolide", "ambroxan", "cetalox", "romandolide"],
+    "vanilla":   ["vanillin", "vanilla", "ethyl vanillin", "coumarin", "heliotropin", "piperonal", "isoeugenol", "iso eugenol", "benzyl benzoate"],
+    "citrus":    ["limonene", "lemon", "orange", "bergamot", "citral", "citronellol", "geranial", "neral", "grapefruit", "citronellal", "linalyl"],
+    "floral":    ["rose", "jasmine", "lily", "geraniol", "linalool", "violet", "peony", "lilial", "lyral", "hedione", "phenyl ethyl", "floralozone", "benzyl alcohol"],
+    "woody":     ["cedar", "sandalwood", "vetiver", "patchouli", "guaiac", "oakmoss", "timbersilk", "cashmeran"],
+    "spicy":     ["eugenol", "cinnamic", "cinnamaldehyde", "clove", "cardamom", "methyl eugenol"],
+    "fresh":     ["menthol", "eucalyptol", "camphor", "cineole", "mint"],
+    "green":     ["violet leaf", "galbanum", "hyacinth", "hexenol"],
+    "powdery":   ["orris", "iris", "ionone"],
+    "fruity":    ["peach", "apricot", "raspberry", "strawberry", "apple", "cherry", "pineapple", "lychee", "mandarin"],
+    "aldehydic": ["nonanal", "decanal", "undecanal", "dodecanal", "aldehyde c-"],
+}
+
+
+def infer_odor_family_net(name: str, smiles: str = "", logp: float = 0.0) -> str:
+    n = name.lower()
+    for family, keywords in ODOR_FAMILY_KEYWORDS_NET.items():
+        if any(kw in n for kw in keywords):
+            return family
+
+    if RDKIT_AVAILABLE and smiles:
+        try:
+            mol = Chem.MolFromSmiles(smiles)
+            if mol:
+                lactone_pat  = Chem.MolFromSmarts("[O;R][C;R](=O)")
+                ester_pat    = Chem.MolFromSmarts("[CX3](=O)[OX2H0][#6]")
+                aldehyde_pat = Chem.MolFromSmarts("[CX3H1](=O)[#6]")
+                alcohol_pat  = Chem.MolFromSmarts("[OX2H][#6]")
+                if mol.HasSubstructMatch(lactone_pat):
+                    return "vanilla"
+                if mol.HasSubstructMatch(ester_pat):
+                    return "fruity"
+                if mol.HasSubstructMatch(aldehyde_pat):
+                    return "aldehydic"
+                if mol.GetRingInfo().NumRings() >= 2 and logp >= 3.5:
+                    return "musk"
+                if mol.HasSubstructMatch(alcohol_pat):
+                    return "floral"
+        except Exception:
+            pass
+
+    return "other"
+
+
+@app.get("/api/network")
+def get_network():
+    nodes = []
+    for i, (_, entry) in enumerate(MOCK_DB.items()):
+        family = infer_odor_family_net(
+            entry.get("name", ""),
+            entry.get("smiles", ""),
+            0.0,
+        )
+        nodes.append({
+            "id": i,
+            "name": entry["name"],
+            "odor_family": family,
+            "status": entry["status"],
+            "limit": entry["limit"],
+            "smiles": entry.get("smiles", ""),
+        })
+    return nodes
+
+
 @app.get("/api/directory")
 def get_directory():
     mols = []
