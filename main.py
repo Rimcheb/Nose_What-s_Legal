@@ -17,7 +17,7 @@ try:
 except ImportError:
     RDKIT_AVAILABLE = False
 
-app = FastAPI(title="Fragrance AI API")
+app = FastAPI(title="Nose What's Legal API")
 
 # Setup CORS
 app.add_middleware(

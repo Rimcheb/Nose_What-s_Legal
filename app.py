@@ -26,12 +26,12 @@ SAMPLE_FORMULA_PATH = Path("sample_formula.csv")
 
 
 st.set_page_config(
-    page_title="Fragrance AI Compliance System",
+    page_title="Nose What's Legal",
     page_icon="🧪",
     layout="wide",
 )
 
-st.title("Fragrance AI Intelligence Hub")
+st.title("Nose What's Legal")
 st.caption("Regulatory analytics, structure-based screening, and formula auditing for IFRA Category 4 workflows.")
 
 

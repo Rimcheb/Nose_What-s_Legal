@@ -1,6 +1,6 @@
-# Smell Good, Legally.
+# Nose What's Legal
 
-### Fragrance AI Compliance System
+### Smell Better, Legally.
 
 ## Overview
 This repository builds an end-to-end cheminformatics workflow for fragrance regulatory analysis, focused on IFRA Category 4 (Fine Fragrance) use-cases.
