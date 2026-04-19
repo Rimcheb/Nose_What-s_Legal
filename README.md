@@ -2,6 +2,10 @@
 
 ### Smell Better, Legally.
 
+Live app URL:
+
+https://nose-what-s-legal.onrender.com/
+
 ## Overview
 This repository builds an end-to-end cheminformatics workflow for fragrance regulatory analysis, focused on IFRA Category 4 (Fine Fragrance) use-cases.
 
