@@ -125,8 +125,16 @@ def get_molecule_data(name: str):
     # Generate 3D Coordinates using RDKit for the Web Viewer
     if RDKIT_AVAILABLE and data.get("smiles"):
         try:
-            m = Chem.AddHs(Chem.MolFromSmiles(data["smiles"]))
-            AllChem.EmbedMolecule(m, randomSeed=42)
+            mol2d = Chem.MolFromSmiles(data["smiles"])
+            if mol2d is None:
+                raise ValueError("Invalid SMILES string")
+            m = Chem.AddHs(mol2d)
+            result = AllChem.EmbedMolecule(m, AllChem.ETKDGv3())
+            if result == -1:
+                # Fallback: try without ETKDGv3 params
+                result = AllChem.EmbedMolecule(m, randomSeed=42)
+            if result == -1:
+                raise ValueError("3D embedding failed — no coordinates generated")
             AllChem.MMFFOptimizeMolecule(m)
             data["mol_block"] = Chem.MolToMolBlock(m) # For 3Dmol.js
             data["logp"] = round(Descriptors.MolLogP(m), 2)
@@ -136,12 +144,18 @@ def get_molecule_data(name: str):
             if data["replacement"] == "Compute via KNN":
                 from rdkit import DataStructs
                 target_fp = AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(data["smiles"]), 2, nBits=1024)
-                
+
                 best_match = None
                 best_score = 0.0
-                
+                current_name = data["name"].lower()
+
                 for k, v in MOCK_DB.items():
-                    if "Unregulated" in v["status"]:
+                    # Skip the molecule itself
+                    if k == current_name:
+                        continue
+                    # Candidate pool: unregulated watchlist OR restricted (has a permitted limit)
+                    is_candidate = "Unregulated" in v["status"] or v["status"] == "Restricted"
+                    if is_candidate and v.get("smiles"):
                         safe_mol = Chem.MolFromSmiles(v["smiles"])
                         if safe_mol:
                             safe_fp = AllChem.GetMorganFingerprintAsBitVect(safe_mol, 2, nBits=1024)
