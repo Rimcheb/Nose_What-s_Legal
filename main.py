@@ -4,6 +4,8 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
+from urllib.parse import quote
+from urllib.request import urlopen
 import pandas as pd
 
 # Try importing RDKit for 3D coordinate generation
@@ -96,15 +98,133 @@ except Exception as e:
 
 @app.get("/api/directory")
 def get_directory():
-    mols = sorted(MOCK_DB.values(), key=lambda x: x["name"])
+    mols = []
+    for entry in sorted(MOCK_DB.values(), key=lambda x: x["name"]):
+        item = entry.copy()
+        item.update(infer_odor_profile(item.get("name", ""), item.get("smiles", ""), None))
+        mols.append(item)
     return mols
 
 @app.get("/")
 def serve_home():
-    return FileResponse("public/index.html")
+    return FileResponse("new_UI.html")
 
 # Serve static files built for the frontend
 app.mount("/public", StaticFiles(directory="public"), name="public")
+
+
+def fetch_pubchem_molblock(smiles: str):
+    """Fetch a 3D SDF block from PubChem as a fallback when RDKit is unavailable."""
+    if not smiles:
+        return None
+
+    try:
+        encoded = quote(smiles, safe="")
+        url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/{encoded}/SDF?record_type=3d"
+        with urlopen(url, timeout=10) as response:
+            text = response.read().decode("utf-8", errors="ignore")
+            if text and "M  END" in text:
+                return text
+    except Exception as e:
+        print("PubChem 3D fallback failed:", e)
+
+    return None
+
+
+def infer_odor_profile(name: str, smiles: str, logp_value=None):
+    """Infer likely odor families from structure using transparent heuristics.
+
+    This is a structure-odor estimate, not a definitive sensory claim.
+    """
+    name_l = (name or "").lower()
+    smiles_s = (smiles or "").strip()
+
+    name_hints = [
+        ("vanillin", "vanilla, creamy, sweet", "name match: vanillin-like aromatic aldehyde", "high"),
+        ("musk", "musky, powdery", "name match: musk class ingredient", "high"),
+        ("limonene", "citrus, zesty", "name match: limonene terpene", "high"),
+        ("linalool", "floral, citrus, fresh", "name match: linalool terpene alcohol", "high"),
+        ("citral", "lemon, aldehydic", "name match: citral aldehyde terpene", "high"),
+        ("coumarin", "sweet hay, tonka, almond", "name match: coumarin aromatic lactone", "high"),
+    ]
+    for key, profile, basis, confidence in name_hints:
+        if key in name_l:
+            return {"odor_profile": profile, "odor_basis": basis, "odor_confidence": confidence}
+
+    if RDKIT_AVAILABLE and smiles_s:
+        try:
+            mol = Chem.MolFromSmiles(smiles_s)
+            if mol is not None:
+                families = []
+                basis = []
+
+                patterns = [
+                    ("[CX3](=O)[OX2H0][#6]", "fruity, sweet", "ester motif"),
+                    ("[CX3H1](=O)[#6]", "aldehydic, citrus/waxy", "aldehyde motif"),
+                    ("[#6][CX3](=O)[#6]", "woody, floral-fruity", "ketone motif"),
+                    ("[OX2H][#6]", "fresh, floral", "alcohol motif"),
+                    ("c[OH]", "phenolic, clove-like/smoky", "phenolic aromatic OH"),
+                    ("[OD2]([#6])[#6]", "sweet, anisic", "ether motif"),
+                    ("[O;R][C;R](=O)", "creamy, coconut/peachy", "lactone ring motif"),
+                ]
+
+                for smarts, profile, why in patterns:
+                    patt = Chem.MolFromSmarts(smarts)
+                    if patt is not None and mol.HasSubstructMatch(patt):
+                        families.append(profile)
+                        basis.append(why)
+
+                aromatic_atoms = sum(1 for atom in mol.GetAtoms() if atom.GetIsAromatic())
+                if aromatic_atoms >= 6:
+                    families.append("woody, balsamic")
+                    basis.append("aromatic ring system")
+
+                ring_count = mol.GetRingInfo().NumRings()
+                if ring_count >= 3 and isinstance(logp_value, (int, float)) and logp_value >= 3:
+                    families.append("ambery, musky")
+                    basis.append("polycyclic + lipophilic profile")
+
+                dedup_fam = list(dict.fromkeys(families))
+                dedup_basis = list(dict.fromkeys(basis))
+                if dedup_fam:
+                    if len(dedup_fam) >= 3:
+                        confidence = "high"
+                    elif len(dedup_fam) == 2:
+                        confidence = "medium"
+                    else:
+                        confidence = "low"
+                    return {
+                        "odor_profile": ", ".join(dedup_fam[:3]),
+                        "odor_basis": "; ".join(dedup_basis[:3]),
+                        "odor_confidence": confidence,
+                    }
+        except Exception:
+            pass
+
+    fallback_notes = []
+    fallback_basis = []
+    if "=O" in smiles_s:
+        fallback_notes.append("aldehydic/ketonic")
+        fallback_basis.append("carbonyl pattern in SMILES")
+    if "c1" in smiles_s or "c2" in smiles_s:
+        fallback_notes.append("woody/balsamic")
+        fallback_basis.append("aromatic pattern in SMILES")
+    if "O" in smiles_s:
+        fallback_notes.append("sweet/floral")
+        fallback_basis.append("oxygenated functionality")
+
+    if fallback_notes:
+        return {
+            "odor_profile": ", ".join(list(dict.fromkeys(fallback_notes))[:3]),
+            "odor_basis": "; ".join(list(dict.fromkeys(fallback_basis))[:3]),
+            "odor_confidence": "low",
+        }
+
+    return {
+        "odor_profile": "unknown",
+        "odor_basis": "insufficient structural evidence",
+        "odor_confidence": "low",
+    }
 
 @app.get("/api/search")
 def search_molecules(q: str = ""):
@@ -171,15 +291,23 @@ def get_molecule_data(name: str):
 
         except Exception as e:
             print("RDKit Error:", e)
-            data["mol_block"] = None
+            data["mol_block"] = fetch_pubchem_molblock(data.get("smiles", ""))
             data["logp"] = "N/A"
             data["mol_wt"] = "N/A"
             if data["replacement"] == "Compute via KNN": data["replacement"] = "No coordinates for Tanimoto."
     else:
-        data["mol_block"] = None
+        data["mol_block"] = fetch_pubchem_molblock(data.get("smiles", ""))
         data["logp"] = "N/A"
         data["mol_wt"] = "N/A"
         if data["replacement"] == "Compute via KNN": data["replacement"] = "No coordinates for Tanimoto."
+
+    data.update(
+        infer_odor_profile(
+            data.get("name", ""),
+            data.get("smiles", ""),
+            data.get("logp") if isinstance(data.get("logp"), (int, float)) else None,
+        )
+    )
 
     return data
 
