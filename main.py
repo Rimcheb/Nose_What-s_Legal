@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from typing import List
 from urllib.parse import quote
 from urllib.request import urlopen
+from pathlib import Path
 import pandas as pd
 
 # Try importing RDKit for 3D coordinate generation
@@ -18,6 +19,12 @@ except ImportError:
     RDKIT_AVAILABLE = False
 
 app = FastAPI(title="Nose What's Legal API")
+
+BASE_DIR = Path(__file__).resolve().parent
+IFRA_CSV_PATH = BASE_DIR / "ifra_category4_smiles.csv"
+WATCHLIST_CSV_PATH = BASE_DIR / "AI_Predictive_Watchlist.csv"
+UI_HTML_PATH = BASE_DIR / "new_UI.html"
+PUBLIC_DIR_PATH = BASE_DIR / "public"
 
 # Setup CORS
 app.add_middleware(
@@ -33,7 +40,7 @@ MOCK_DB = {}
 
 # 1. Load IFRA Category 4 Restricted Items
 try:
-    ifra_df = pd.read_csv("ifra_category4_smiles.csv")
+    ifra_df = pd.read_csv(IFRA_CSV_PATH)
     for _, row in ifra_df.iterrows():
         name = str(row["ingredient_name"])
         if pd.isna(name) or name.lower() == "nan":
@@ -71,7 +78,7 @@ except Exception as e:
 
 # 2. Load AI Predictive Watchlist (Unregulated but High Risk)
 try:
-    watchlist_df = pd.read_csv("AI_Predictive_Watchlist.csv")
+    watchlist_df = pd.read_csv(WATCHLIST_CSV_PATH)
     for _, row in watchlist_df.iterrows():
         name = str(row["Candidate_Name"])
         if pd.isna(name) or name.lower() == "nan":
@@ -96,6 +103,8 @@ try:
 except Exception as e:
     print(f"Failed to load Watchlist data: {e}")
 
+print(f"Loaded ingredient records: {len(MOCK_DB)}")
+
 @app.get("/api/directory")
 def get_directory():
     mols = []
@@ -107,10 +116,10 @@ def get_directory():
 
 @app.get("/")
 def serve_home():
-    return FileResponse("new_UI.html")
+    return FileResponse(UI_HTML_PATH)
 
 # Serve static files built for the frontend
-app.mount("/public", StaticFiles(directory="public"), name="public")
+app.mount("/public", StaticFiles(directory=str(PUBLIC_DIR_PATH)), name="public")
 
 
 def fetch_pubchem_molblock(smiles: str):
