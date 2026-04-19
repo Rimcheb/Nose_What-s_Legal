@@ -3,8 +3,6 @@
 ### Fragrance AI Compliance System
 
 ## Overview
-Smell Good, Legally. is the product slogan for this project.
-
 This repository builds an end-to-end cheminformatics workflow for fragrance regulatory analysis, focused on IFRA Category 4 (Fine Fragrance) use-cases.
 
 The system connects:
