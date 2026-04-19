@@ -174,6 +174,9 @@ The app is cloud-ready by default:
 ## Public Deployment (Render, FastAPI)
 Use this when you want the FastAPI + `new_UI.html` experience publicly available.
 
+Live app URL:
+- https://nose-what-s-legal.onrender.com/
+
 Build command:
 ```bash
 pip install --upgrade pip && pip install -r requirements-full.txt
